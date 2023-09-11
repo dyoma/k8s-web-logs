@@ -1,0 +1,17 @@
+{
+  "extends": "ts-node/node16/tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "moduleResolution": "node16",
+    "jsx": "react",
+    "lib": [
+      "es2018",
+      "DOM"
+    ]
+  },
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+    }
+  }
+}

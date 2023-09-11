@@ -1,0 +1,35 @@
+.ui-tabs-tab {
+  border-style: solid;
+  border-color: black;
+  border-width: 1px 1px 0 1px;
+  border-radius: 5px 5px 0 0;
+  padding: .3em .3em .3em .3em;
+  margin: 0 -1px 0 0;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.ui-tabs-pane {
+  border-style: solid;
+  border-color: #888888;
+  border-width: 0 0 .5px 0;
+  padding: 0 .3rem 0 .3rem;
+}
+
+.ui-tabs-tab:hover {
+  cursor: pointer;
+  background: #cbd4fc;
+}
+
+.ui-tabs-active, .ui-tabs-active:hover {
+  background: #176ef3;
+  color: white;
+}
+
+.ui-tabs-tab-close:hover {
+  color: red;
+}
+
+.ui-tabs-invisible {
+  display: none !important;
+}

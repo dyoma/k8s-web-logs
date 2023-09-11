@@ -1,0 +1,9 @@
+.ui-events-trace-link, .ui-events-trace-link:visited {
+  color: blue;
+}
+
+.ui-ex-stack-trace {
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre;
+}

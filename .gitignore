@@ -1,0 +1,10 @@
+*.class
+*.log
+*.jar
+target/
+.idea/
+.DS_Store
+Thumbs.db
+cache/
+web-inspector.iml
+src/main/resources/com/almworks/dyoma/kubenetes/logs/server/kubeConfig.yml

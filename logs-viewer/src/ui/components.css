@@ -1,0 +1,65 @@
+.ui-comp-single-text-line {
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-comp-treeOffset {
+  padding-left: 2em;
+}
+
+.ui-comp-control {
+  border: solid black 1px;
+  padding: .1em .3em .6em .35em;
+  border-radius: .5em;
+  margin: .2em .8em .2em .2em;
+  width: .6em;
+  height: .6em;
+  display: inline-block;
+  box-sizing: content-box;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 75%;
+}
+
+.ui-comp-control:hover, .ui-comp-control-long:hover {
+  cursor: pointer;
+  background: aqua;
+}
+
+.ui-comp-label {
+  font-weight: bold;
+  opacity: 80%;
+  margin-right: .4rem;
+  font-size: 90%;
+}
+
+.ui-comp-list {
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: .3rem;
+}
+
+.ui-comp-list-element {
+  margin-bottom: .6rem;
+}
+
+.mr2 {
+  margin-right: .4em;
+}
+
+.mr3 {
+  margin-right: .8em;
+}
+
+.mb3 {
+  margin-bottom: .8em;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
