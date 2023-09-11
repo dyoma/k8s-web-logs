@@ -38,9 +38,15 @@ export class SubscriptionCounter implements SubscriptionListener {
 export class SubscriptionCounterWithListeners<U> implements SubscriptionListener{
   readonly listeners: Listeners<U>
   readonly counter = new SubscriptionCounter(this)
-  constructor(private readonly listener: SubscriptionListener, debugName?: string) {
-    this.listeners = new Listeners<U>(this, debugName)
+  constructor(private readonly listener: SubscriptionListener) {
+    this.listeners = new Listeners<U>(this)
   }
+
+  set debugName(name: string | undefined) {
+    this.listeners.debugName = name
+  }
+
+  get debugName() { return this.listeners.debugName }
 
   onFirstSubscribe(): void {
     if ((this.counter.count === 1 && this.listeners.isEmpty)
@@ -57,12 +63,15 @@ export class SubscriptionCounterWithListeners<U> implements SubscriptionListener
 export class Listeners<U> {
   private readonly listeners: ((u: U) => void)[] = []
   private static counter = 0
-  private readonly debugName = `Listeners(${Listeners.counter++})`
+  private _debugName: string
 
-  constructor(private readonly listener: SubscriptionListener, debugName?: string) {
-    const name = debugName || (`${Listeners.counter++}`)
-    this.debugName = `Listeners(${name})`
+  constructor(private readonly listener: SubscriptionListener) {
+    this._debugName = `${Listeners.counter++}`
   }
+
+  get debugName() { return this._debugName }
+
+  set debugName(name: string | undefined) { if (name) this._debugName = name }
 
   fire(upd: U) {
     this.listeners.forEach(l => l(upd))
@@ -71,7 +80,7 @@ export class Listeners<U> {
   subscribe(listener: (u: U) => void): () => void {
     this.listeners.push(listener)
     if (this.listeners.length === 1) this.listener.onFirstSubscribe()
-    console.log(`${this.debugName}++ = ${this.listeners.length}`)
+    this.log(`++ = ${this.listeners.length}`)
     return () => this.removeListener(listener)
   }
 
@@ -84,7 +93,11 @@ export class Listeners<U> {
     if (index > -1) {
       this.listeners.splice(index, 1);
       if (this.listeners.length === 0) this.listener.onLastUnsubscribe()
-      console.log(`${this.debugName}-- = ${this.listeners.length}`)
-    } else console.log(`${this.debugName}: Unknown listener`, listener)
+      this.log(`-- = ${this.listeners.length}`)
+    } else this.log("Unknown listener", listener)
+  }
+
+  private log(...args: any[]) {
+    console.log.apply(console, [`Listeners(${this.debugName}):`, ...args])
   }
 }

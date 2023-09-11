@@ -15,9 +15,15 @@ export class EventListHolder implements ObservableEventList {
   private readonly eventArray: LEvent[] = []
   private readonly listeners
 
-  constructor(subscriptionListener: SubscriptionListener, debugName?: string) {
-    this.listeners = new Listeners<EventListUpdate>(subscriptionListener, debugName)
+  constructor(subscriptionListener: SubscriptionListener, private readonly comparator?: (a: LEvent, b: LEvent) => number) {
+    this.listeners = new Listeners<EventListUpdate>(subscriptionListener)
   }
+
+  set debugName(name: string) {
+    this.listeners.debugName = name
+  }
+
+  get debugName(): string { return this.listeners.debugName || "" }
 
   currentList() { return new List(this.eventArray) }
 
@@ -41,6 +47,12 @@ export class EventListHolder implements ObservableEventList {
       this.eventArray.length = 0
     } else throw Error(`Unknown event ${upd[0]}`)
     newEvents.forEach(e => this.eventArray.push(e))
+    if (this.comparator) {
+      const message = `Sort[Total:${this.eventArray.length}, inc:${upd[1].length}]`
+      console.time(message)
+      this.eventArray.sort(this.comparator)
+      console.timeEnd(message)
+    }
     this.listeners.fire(upd)
   }
 }
@@ -63,13 +75,19 @@ export class FilterOperation implements ObservableEventList {
 
   private constructor(private readonly master: ObservableEventList,
                       private readonly filter: (e: LEvent) => boolean,
-                      debugName?: string) {
-    this.holder = new EventListHolder(this.subscriptionListener, debugName)
+                      comparator?: (a: LEvent, b: LEvent) => number) {
+    this.holder = new EventListHolder(this.subscriptionListener, comparator)
   }
 
-  static useFilter(master: ObservableEventList, filter: (e: LEvent) => boolean, debugName?: string): FilterOperation {
-    return React.useMemo(() => new FilterOperation(master, filter, debugName), [master, filter])
+  static useFilter(master: ObservableEventList, filter: (e: LEvent) => boolean, comparator?: (a: LEvent, b: LEvent) => number): FilterOperation {
+    return React.useMemo(() => new FilterOperation(master, filter, comparator), [master, filter])
   }
+
+  set debugName(name: string) {
+    this.holder.debugName = name
+  }
+
+  get debugName() { return this.holder.debugName }
 
   useSnapshot(): List<LEvent> { return this.holder.useSnapshot() }
 
@@ -102,17 +120,23 @@ export class EventGroups<K> {
   private constructor(private readonly master: ObservableEventList,
                       private readonly grouper: (e: LEvent) => K,
                       keyId: (k: K) => string,
-                      debugName?: string) {
-    this.subscriptions = new SubscriptionCounterWithListeners(this.subscriptionListener, debugName)
+                      private readonly comparator?: (a: LEvent, b: LEvent) => number) {
+    this.subscriptions = new SubscriptionCounterWithListeners(this.subscriptionListener)
     this.groups = new MutableObjMap(keyId)
   }
 
-  static useTextGrouper(master: ObservableEventList, grouper: (e: LEvent) => string, debugName?: string): EventGroups<string> {
-    return this.useGrouper(master, grouper, s => s, debugName)
+  set debugName(name: string | undefined) {
+    this.subscriptions.debugName = name
   }
 
-  static useGrouper<K>(master: ObservableEventList, grouper: (e: LEvent) => K, keyId: (k: K) => string, debugName?: string): EventGroups<K> {
-    return React.useMemo(() => new EventGroups<K>(master, grouper, keyId, debugName), [master, grouper, keyId])
+  get debugName() { return this.subscriptions.debugName }
+
+  static useTextGrouper(master: ObservableEventList, grouper: (e: LEvent) => string): EventGroups<string> {
+    return this.useGrouper(master, grouper, s => s)
+  }
+
+  static useGrouper<K>(master: ObservableEventList, grouper: (e: LEvent) => K, keyId: (k: K) => string): EventGroups<K> {
+    return React.useMemo(() => new EventGroups<K>(master, grouper, keyId), [master, grouper, keyId])
   }
 
   useSnapshot(): ObjMap<K, List<LEvent>> {
@@ -151,8 +175,11 @@ export class EventGroups<K> {
     upd[1].forEach(event => arrayMap.computeIfAbsent(this.grouper(event), () => []).push(event))
     const updMap = arrayMap.transformValues<EventListUpdate>(arr => [upd[0], new List(arr)])
     updMap.forEach((groupUpd, groupKey) => {
-      const group = this.groups.computeIfAbsent(groupKey, () =>
-          new EventListHolder(this.subscriptions.counter, `Group[${this.groups.keyId(groupKey)}]`));
+      const group = this.groups.computeIfAbsent(groupKey, () => {
+        let holder = new EventListHolder(this.subscriptions.counter, this.comparator)
+        holder.debugName = `${this.debugName}-Group[${this.groups.keyId(groupKey)}]`
+        return holder
+      });
       group.update(groupUpd)
     })
     this.subscriptions.listeners.fire(updMap)

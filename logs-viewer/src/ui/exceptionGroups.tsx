@@ -26,8 +26,10 @@ class Group {
 }
 
 export function GroupByExceptionClass(props: {events: ObservableEventList}) {
-  const exceptions = FilterOperation.useFilter(props.events, e => e.data.stack_trace, "Exceptions");
-  const byExClass = EventGroups.useTextGrouper(exceptions, e => LogException.parseStackTrace(e.data.stack_trace).exClass, "ExByClass");
+  const exceptions = FilterOperation.useFilter(props.events, e => e.data.stack_trace)
+  exceptions.debugName = "Exceptions"
+  const byExClass = EventGroups.useTextGrouper(exceptions, e => LogException.parseStackTrace(e.data.stack_trace).exClass);
+  byExClass.debugName = "ExByClass"
   const byExClassSnapshot = byExClass.useSnapshot();
   const sortedByClass = byExClassSnapshot.toKeyValueArray(v => v.length > 0)
       .map(pair => new Group(pair[0], pair[1]))

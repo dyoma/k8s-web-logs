@@ -33,13 +33,14 @@ export class EventLoaderProcess {
     }
   }
   private running = false
-  readonly events = new EventListHolder(this.subscriptionListener, "Event-Loader")
+  readonly events = new EventListHolder(this.subscriptionListener)
   private lastSid = -1
   private readonly pods: Pod[] = []
   pingMillis: number
 
   constructor(readonly apiUri: string, pingMillis?: number) {
     this.pingMillis = pingMillis || 5000
+    this.events.debugName = "Event-Loader"
   }
 
   private async pingServer() {

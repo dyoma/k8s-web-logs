@@ -13,6 +13,13 @@ export class List<T> {
     return new List(filteredEvents)
   }
 
+  sublist(begin: number, end: number): List<T> {
+    if (end > this.elements.length) end = this.elements.length
+    if (begin === 0 && end === this.elements.length) return this
+    if (begin >= end) return List.empty()
+    return new List(this.elements.slice(begin, end))
+  }
+
   groupBy<K>(getKey: (t: T) => K): Map<K, List<T>> {
     const map = new Map<K, T[]>()
     this.elements.forEach(e => {
@@ -98,12 +105,18 @@ declare global {
 }
 
 function sortBy<T, K>(this: T[], getKey: (v: T) => K) {
-  return this.sort((a, b) => {
-    const ka = getKey(a);
-    const kb = getKey(b);
-    if (ka == kb) return 0
-    return ka < kb ? -1 : 1
-  })
+  return this.sort(Comparator.by(getKey))
+}
+
+export namespace Comparator {
+  export function by<T, K>(getKey: (v: T) => K): (a: T, b: T) => number {
+    return (a: T, b: T) => {
+      const ka = getKey(a);
+      const kb = getKey(b);
+      if (ka == kb) return 0
+      return ka < kb ? -1 : 1
+    }
+  }
 }
 
 Array.prototype.sortBy = sortBy
