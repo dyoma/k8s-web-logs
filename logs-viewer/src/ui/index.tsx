@@ -5,8 +5,9 @@ import {EventListComponent} from "./events";
 import {TabbedPane} from "./tabs";
 import {GroupByExceptionClass} from "./exceptionGroups";
 import "./scroll.css"
-import {FilterOperation, ObservableEventList} from "./operations";
+import {TransformOperation, ObservableSet} from "./operations";
 import {Comparator} from "../utils/collections";
+import {LEvent} from "../data/loadEvents";
 
 const SERVER = "http://localhost:8123/api"
 
@@ -34,8 +35,8 @@ function LogsApp() {
   </>
 }
 
-function AllEvents(props: {events: ObservableEventList}) {
-  let filtered = FilterOperation.useFilter(props.events, () => true, Comparator.by(e => -e.time.getTime()));
+function AllEvents(props: {events: ObservableSet<LEvent>}) {
+  let filtered = TransformOperation.useFilter(props.events, () => true, Comparator.by(e => -e.time.getTime()));
   filtered.debugName = "AllEvents"
   const snapshot = filtered.useSnapshot();
   return <EventListComponent events={snapshot.sublist(0, 500)}/>

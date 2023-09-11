@@ -1,22 +1,31 @@
 import {List, MutableObjMap, MutableObjSet, ObjMap} from "../utils/collections";
-import {LEvent} from "../data/loadEvents";
 import {Listeners, Notification, SubscriptionCounterWithListeners, SubscriptionListener} from "../utils/listeners";
 import * as React from "react";
 
-export type EventListUpdate = ["new" | "reset", List<LEvent>]
-export type ListUpdateListener = (upd: EventListUpdate) => void
+/**
+ * A set modification is a pair of type and elements. Types:
+ * * new - add new elements to the set
+ * * reset - replace all elements in the set with provided element
+ */
+export type SetUpdate<T> = ["new" | "reset", List<T>]
+export type SetUpdateListener<T> = (upd: SetUpdate<T>) => void
 
-export interface ObservableEventList {
-  subscribe(listener: ListUpdateListener): () => void
-  useSnapshot(): List<LEvent>
+export interface ObservableSet<T> {
+  subscribe(listener: SetUpdateListener<T>): () => void
+  useSnapshot(): List<T>
 }
 
-export class EventListHolder implements ObservableEventList {
-  private readonly eventArray: LEvent[] = []
+/**
+ * Updates itself according to incoming {@link SetUpdate}s.
+ * Optionally, sorts collected elements.
+ * Resends all incoming events to its listeners ({@link subscribe})
+ */
+export class SetHolder<T> implements ObservableSet<T> {
+  private readonly eventArray: T[] = []
   private readonly listeners
 
-  constructor(subscriptionListener: SubscriptionListener, private readonly comparator?: (a: LEvent, b: LEvent) => number) {
-    this.listeners = new Listeners<EventListUpdate>(subscriptionListener)
+  constructor(subscriptionListener: SubscriptionListener, private readonly comparator?: (a: T, b: T) => number) {
+    this.listeners = new Listeners<SetUpdate<T>>(subscriptionListener)
   }
 
   set debugName(name: string) {
@@ -27,19 +36,19 @@ export class EventListHolder implements ObservableEventList {
 
   currentList() { return new List(this.eventArray) }
 
-  useSnapshot(): List<LEvent> {
+  useSnapshot(): List<T> {
     const [list, setList] = React.useState(new List(this.eventArray));
     React.useEffect(() => this.subscribe(() => setList(new List(this.eventArray))), [])
     return list
   }
 
-  subscribe(listener: ListUpdateListener): Notification {
+  subscribe(listener: SetUpdateListener<T>): Notification {
     const unsubscribe = this.listeners.subscribe(listener);
     listener(["reset", new List(this.eventArray)])
     return unsubscribe
   }
 
-  update(upd: EventListUpdate) {
+  update(upd: SetUpdate<T>) {
     const newEvents = upd[1];
     if (upd[0] === "new") {
       if (newEvents.length === 0) return;
@@ -57,7 +66,12 @@ export class EventListHolder implements ObservableEventList {
   }
 }
 
-export class FilterOperation implements ObservableEventList {
+/**
+ * Transforms elements of the {@link master} set by converting to other of filtering out.
+ * Optionally supports ordering converted elements.
+ * {@link mapper} either converts an element or returns `undefined` for filtering the element out
+ */
+export class TransformOperation<S, D> implements ObservableSet<D> {
   private readonly subscriptionListener: SubscriptionListener = {
     onFirstSubscribe: () => {
       console.assert(!this.unsubscribeFromMaster)
@@ -70,17 +84,20 @@ export class FilterOperation implements ObservableEventList {
       this.holder.update(["reset", List.empty()])
     }
   }
-  private readonly holder: EventListHolder
+  private readonly holder: SetHolder<D>
   private unsubscribeFromMaster?: () => void
 
-  private constructor(private readonly master: ObservableEventList,
-                      private readonly filter: (e: LEvent) => boolean,
-                      comparator?: (a: LEvent, b: LEvent) => number) {
-    this.holder = new EventListHolder(this.subscriptionListener, comparator)
+  private constructor(private readonly master: ObservableSet<S>,
+                      private readonly mapper: (s: S) => D | undefined,
+                      comparator?: (a: D, b: D) => number) {
+    this.holder = new SetHolder<D>(this.subscriptionListener, comparator)
   }
 
-  static useFilter(master: ObservableEventList, filter: (e: LEvent) => boolean, comparator?: (a: LEvent, b: LEvent) => number): FilterOperation {
-    return React.useMemo(() => new FilterOperation(master, filter, comparator), [master, filter])
+  static useFilter<T>(master: ObservableSet<T>,
+                      filter: (t: T) => boolean,
+                      comparator?: (a: T, b: T) => number): TransformOperation<T, T> {
+    const mapper = (t: T) => filter(t) ? t : undefined;
+    return React.useMemo(() => new TransformOperation(master, mapper, comparator), [master, filter])
   }
 
   set debugName(name: string) {
@@ -89,20 +106,33 @@ export class FilterOperation implements ObservableEventList {
 
   get debugName() { return this.holder.debugName }
 
-  useSnapshot(): List<LEvent> { return this.holder.useSnapshot() }
+  useSnapshot(): List<D> { return this.holder.useSnapshot() }
 
-  subscribe(listener: ListUpdateListener) { return this.holder.subscribe(listener) }
+  subscribe(listener: SetUpdateListener<D>) { return this.holder.subscribe(listener) }
 
-  private onUpdate(upd: EventListUpdate) {
-    this.holder.update([upd[0], upd[1].filter(this.filter)])
+  private onUpdate(upd: SetUpdate<S>) {
+    const mapped: D[] = []
+    upd[1].forEach(s => {
+      const d = this.mapper(s);
+      if (d !== undefined) mapped.push(d)
+    })
+    this.holder.update([upd[0], new List(mapped)])
   }
 }
 
-export type EventMapUpdate<K> = ObjMap<K, EventListUpdate>
-export type MapUpdateListener<K> = (upd: EventMapUpdate<K>) => void
+/**
+ * Modification of a multimap is a map of keys to {@link SetUpdate}
+ */
+export type MapUpdate<T, K> = ObjMap<K, SetUpdate<T>>
+export type MapUpdateListener<T, K> = (upd: MapUpdate<T, K>) => void
 
-export class EventGroups<K> {
-  private readonly groups: MutableObjMap<K, EventListHolder>
+/**
+ * Groups elements of {@link master} set by assigning keys provided by {@link grouper}.
+ * Optionally sorts grouped elements
+ * @see ObjMap
+ */
+export class GroupByOperation<T, K> {
+  private readonly groups: MutableObjMap<K, SetHolder<T>>
   private readonly subscriptionListener: SubscriptionListener = {
     onFirstSubscribe: () => {
       console.assert(!this.unsubscribeFromMaster)
@@ -114,13 +144,13 @@ export class EventGroups<K> {
       this.groups.forEach(group => group.update(["reset", List.empty()]))
     }
   }
-  private readonly subscriptions: SubscriptionCounterWithListeners<EventMapUpdate<K>>
+  private readonly subscriptions: SubscriptionCounterWithListeners<MapUpdate<T, K>>
   private unsubscribeFromMaster?: () => void
 
-  private constructor(private readonly master: ObservableEventList,
-                      private readonly grouper: (e: LEvent) => K,
+  private constructor(private readonly master: ObservableSet<T>,
+                      private readonly grouper: (t: T) => K,
                       keyId: (k: K) => string,
-                      private readonly comparator?: (a: LEvent, b: LEvent) => number) {
+                      private readonly comparator?: (a: T, b: T) => number) {
     this.subscriptions = new SubscriptionCounterWithListeners(this.subscriptionListener)
     this.groups = new MutableObjMap(keyId)
   }
@@ -131,19 +161,19 @@ export class EventGroups<K> {
 
   get debugName() { return this.subscriptions.debugName }
 
-  static useTextGrouper(master: ObservableEventList, grouper: (e: LEvent) => string): EventGroups<string> {
+  static useTextGrouper<T>(master: ObservableSet<T>, grouper: (t: T) => string): GroupByOperation<T, string> {
     return this.useGrouper(master, grouper, s => s)
   }
 
-  static useGrouper<K>(master: ObservableEventList, grouper: (e: LEvent) => K, keyId: (k: K) => string): EventGroups<K> {
-    return React.useMemo(() => new EventGroups<K>(master, grouper, keyId), [master, grouper, keyId])
+  static useGrouper<T, K>(master: ObservableSet<T>, grouper: (t: T) => K, keyId: (k: K) => string): GroupByOperation<T, K> {
+    return React.useMemo(() => new GroupByOperation<T, K>(master, grouper, keyId), [master, grouper, keyId])
   }
 
-  useSnapshot(): ObjMap<K, List<LEvent>> {
-    const [map, setMap] = React.useState<ObjMap<K, List<LEvent>>>(() => this.currentState());
+  useSnapshot(): ObjMap<K, List<T>> {
+    const [map, setMap] = React.useState<ObjMap<K, List<T>>>(() => this.currentState())
     React.useEffect(() => this.subscribe(upd => {
       setMap((prev) => {
-        const newMap = new MutableObjMap<K, List<LEvent>>(this.groups.keyId)
+        const newMap = new MutableObjMap<K, List<T>>(this.groups.keyId)
         const allKeys = new MutableObjSet(this.groups.keyId)
         allKeys.addAllKeys(upd)
         allKeys.addAllKeys(prev)
@@ -161,22 +191,22 @@ export class EventGroups<K> {
     return this.groups.transformValues(group => group.currentList())
   }
 
-  subscribe(listener: MapUpdateListener<K>): Notification {
+  subscribe(listener: MapUpdateListener<T, K>): Notification {
     const unsubscribe = this.subscriptions.listeners.subscribe(listener)
     const initialUpdate = this.groups
-        .transformValues<EventListUpdate>(group => ["reset", group.currentList()]);
+        .transformValues<SetUpdate<T>>(group => ["reset", group.currentList()]);
     listener(initialUpdate)
     return unsubscribe
   }
 
-  private onUpdate(upd: EventListUpdate) {
+  private onUpdate(upd: SetUpdate<T>) {
     if (upd[1].length === 0) return
-    const arrayMap = new MutableObjMap<K, LEvent[]>(this.groups.keyId)
-    upd[1].forEach(event => arrayMap.computeIfAbsent(this.grouper(event), () => []).push(event))
-    const updMap = arrayMap.transformValues<EventListUpdate>(arr => [upd[0], new List(arr)])
+    const arrayMap = new MutableObjMap<K, T[]>(this.groups.keyId)
+    upd[1].forEach(t => arrayMap.computeIfAbsent(this.grouper(t), () => []).push(t))
+    const updMap = arrayMap.transformValues<SetUpdate<T>>(arr => [upd[0], new List(arr)])
     updMap.forEach((groupUpd, groupKey) => {
       const group = this.groups.computeIfAbsent(groupKey, () => {
-        let holder = new EventListHolder(this.subscriptions.counter, this.comparator)
+        let holder = new SetHolder(this.subscriptions.counter, this.comparator)
         holder.debugName = `${this.debugName}-Group[${this.groups.keyId(groupKey)}]`
         return holder
       });

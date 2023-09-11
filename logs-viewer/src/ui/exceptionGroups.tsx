@@ -1,5 +1,5 @@
 import * as React from "react";
-import {EventGroups, FilterOperation, ObservableEventList} from "./operations";
+import {GroupByOperation, TransformOperation, ObservableSet} from "./operations";
 import {LogException} from "../data/exception";
 import {List} from "../utils/collections";
 import {LEvent} from "../data/loadEvents";
@@ -25,10 +25,10 @@ class Group {
   }
 }
 
-export function GroupByExceptionClass(props: {events: ObservableEventList}) {
-  const exceptions = FilterOperation.useFilter(props.events, e => e.data.stack_trace)
+export function GroupByExceptionClass(props: {events: ObservableSet<LEvent>}) {
+  const exceptions = TransformOperation.useFilter(props.events, e => e.data.stack_trace)
   exceptions.debugName = "Exceptions"
-  const byExClass = EventGroups.useTextGrouper(exceptions, e => LogException.parseStackTrace(e.data.stack_trace).exClass);
+  const byExClass = GroupByOperation.useTextGrouper(exceptions, e => LogException.parseStackTrace(e.data.stack_trace).exClass);
   byExClass.debugName = "ExByClass"
   const byExClassSnapshot = byExClass.useSnapshot();
   const sortedByClass = byExClassSnapshot.toKeyValueArray(v => v.length > 0)

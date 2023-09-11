@@ -59,6 +59,9 @@ export class List<T> {
   }
 }
 
+/**
+ * This is a read-only map from keys of any type to values. {@link keyId} defines equality for keys by converting them to `string`
+ */
 export class ObjMap<K, V> {
   protected readonly valueMap = new Map<string, V>()
   protected readonly keys: K[] = []
