@@ -111,8 +111,9 @@ function sortBy<T, K>(this: T[], getKey: (v: T) => K) {
   return this.sort(Comparator.by(getKey))
 }
 
+export type Comparator<T> = (a: T, b: T) => number
 export namespace Comparator {
-  export function by<T, K>(getKey: (v: T) => K): (a: T, b: T) => number {
+  export function by<T, K>(getKey: (v: T) => K): Comparator<T> {
     return (a: T, b: T) => {
       const ka = getKey(a);
       const kb = getKey(b);

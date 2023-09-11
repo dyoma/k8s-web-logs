@@ -3,7 +3,6 @@ import {LEvent} from "../data/loadEvents";
 import {List} from "../utils/collections";
 import {DisplayOptions, FieldValue, ListComponent, ShortLongDetailsComponent} from "./components";
 import {EventLoader} from "./eventLoader";
-import {TransformOperation} from "./operations";
 import {TabbedPane} from "./tabs";
 import "./events.css"
 import {LogException} from "../data/exception";
@@ -59,7 +58,9 @@ export namespace Trace {
   export function Tab(props: {traceId: string}) {
     const options = DisplayOptions.use()
     const displayNoTrace = {...options, trace: false}
-    const traceEvents = TransformOperation.useFilter(EventLoader.useAllEvents(), e => e.data.traceId === props.traceId);
+    const traceEvents = EventLoader.useAllEvents()
+        .useFilter(e => e.data.traceId === props.traceId)
+    traceEvents.debugName = `TraceId[${props.traceId}]`
     const traceSnapshot = traceEvents.useSnapshot();
 
     return <DisplayOptions.Context.Provider value={displayNoTrace}>

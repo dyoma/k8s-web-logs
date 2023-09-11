@@ -1,4 +1,4 @@
-import {List, MutableObjMap, MutableObjSet, ObjMap} from "../utils/collections";
+import {Comparator, List, MutableObjMap, MutableObjSet, ObjMap} from "../utils/collections";
 import {Listeners, Notification, SubscriptionCounterWithListeners, SubscriptionListener} from "../utils/listeners";
 import * as React from "react";
 
@@ -11,8 +11,42 @@ export type SetUpdate<T> = ["new" | "reset", List<T>]
 export type SetUpdateListener<T> = (upd: SetUpdate<T>) => void
 
 export interface ObservableSet<T> {
+  useFilter(filter: (t: T) => boolean, comparator?: Comparator<T>): ObservableSet<T>
+
+  useTransform<D>(mapper: (t: T) => D | undefined, comparator?: Comparator<D>): ObservableSet<D>
+
+  useGroupBy<K>(grouper: (t: T) => K, keyId: (k: K) => string): GroupByOperation<T, K>
+
+  useGroupByText(grouper: (t: T) => string): GroupByOperation<T, string>
+
+  debugName: string
+
   subscribe(listener: SetUpdateListener<T>): () => void
   useSnapshot(): List<T>
+}
+
+abstract class BaseObservableSet<T> implements ObservableSet<T> {
+  useFilter(filter: (t: T) => boolean, comparator?: Comparator<T>): ObservableSet<T> {
+    const mapper = React.useMemo(() => (t: T) => filter(t) ? t : undefined, [filter])
+    return this.useTransform(mapper, comparator)
+  }
+
+  useTransform<D>(mapper: (t: T) => D | undefined, comparator?: Comparator<D>): ObservableSet<D> {
+    return TransformOperation.useTransform(this, mapper, comparator)
+  }
+
+  useGroupBy<K>(grouper: (t: T) => K, keyId: (k: K) => string): GroupByOperation<T, K> {
+    return GroupByOperation.useGrouper(this, grouper, keyId)
+  }
+
+  useGroupByText(grouper: (t: T) => string): GroupByOperation<T, string> {
+    return this.useGroupBy(grouper, s => s)
+  }
+
+  abstract debugName: string;
+
+  abstract subscribe(listener: SetUpdateListener<T>): () => void
+  abstract useSnapshot(): List<T>
 }
 
 /**
@@ -20,11 +54,12 @@ export interface ObservableSet<T> {
  * Optionally, sorts collected elements.
  * Resends all incoming events to its listeners ({@link subscribe})
  */
-export class SetHolder<T> implements ObservableSet<T> {
+export class SetHolder<T> extends BaseObservableSet<T> {
   private readonly eventArray: T[] = []
   private readonly listeners
 
   constructor(subscriptionListener: SubscriptionListener, private readonly comparator?: (a: T, b: T) => number) {
+    super()
     this.listeners = new Listeners<SetUpdate<T>>(subscriptionListener)
   }
 
@@ -71,7 +106,7 @@ export class SetHolder<T> implements ObservableSet<T> {
  * Optionally supports ordering converted elements.
  * {@link mapper} either converts an element or returns `undefined` for filtering the element out
  */
-export class TransformOperation<S, D> implements ObservableSet<D> {
+class TransformOperation<S, D> extends BaseObservableSet<D> {
   private readonly subscriptionListener: SubscriptionListener = {
     onFirstSubscribe: () => {
       console.assert(!this.unsubscribeFromMaster)
@@ -90,14 +125,14 @@ export class TransformOperation<S, D> implements ObservableSet<D> {
   private constructor(private readonly master: ObservableSet<S>,
                       private readonly mapper: (s: S) => D | undefined,
                       comparator?: (a: D, b: D) => number) {
+    super()
     this.holder = new SetHolder<D>(this.subscriptionListener, comparator)
   }
 
-  static useFilter<T>(master: ObservableSet<T>,
-                      filter: (t: T) => boolean,
-                      comparator?: (a: T, b: T) => number): TransformOperation<T, T> {
-    const mapper = (t: T) => filter(t) ? t : undefined;
-    return React.useMemo(() => new TransformOperation(master, mapper, comparator), [master, filter])
+  static useTransform<S, D>(master: ObservableSet<S>,
+                            mapper: (s: S) => D | undefined,
+                            comparator?: Comparator<D>): TransformOperation<S, D> {
+    return React.useMemo(() => new TransformOperation(master, mapper, comparator), [master, mapper, comparator])
   }
 
   set debugName(name: string) {

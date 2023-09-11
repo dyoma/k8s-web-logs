@@ -3,6 +3,7 @@ import {SubscriptionListener} from "../utils/listeners";
 import {LEvent, loadEvents, Pod} from "../data/loadEvents";
 import {SetHolder, ObservableSet} from "./operations";
 import {ReactNode} from "react";
+import {Comparator} from "../utils/collections";
 
 export function EventLoader(props: {apiUri: string, children: ReactNode | ReactNode[]}) {
   const loader = React.useMemo(() => new EventLoaderProcess(props.apiUri), [props.apiUri]);
@@ -33,7 +34,7 @@ export class EventLoaderProcess {
     }
   }
   private running = false
-  readonly events = new SetHolder<LEvent>(this.subscriptionListener)
+  readonly events = new SetHolder<LEvent>(this.subscriptionListener, Comparator.by(e => -e.time.getTime()))
   private lastSid = -1
   private readonly pods: Pod[] = []
   pingMillis: number
