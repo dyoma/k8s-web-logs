@@ -30,7 +30,7 @@ export function ListComponent<T>(props: {list: List<T>, renderer: (t: T, index: 
 
 export function ExpandableComponent(props: {header: React.JSX.Element, body: React.JSX.Element}) {
   const [expanded, setExpanded] = React.useState(false)
-  return <div className="mc-ExpandableComponent" style={{whiteSpace: "nowrap"}}>
+  return <div className="mc-ExpandableComponent">
     <span className="ui-comp-control" onClick={() => setExpanded(!expanded)}>{expanded ? "-" : "+"}</span>
     {props.header}
     {expanded ? props.body : null}

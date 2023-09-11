@@ -4,6 +4,18 @@
   text-overflow: ellipsis;
 }
 
+.ui-comp-wrap-text {
+  overflow-wrap: anywhere;
+}
+
+.ui-comp-limit-text-height {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+}
+
 .ui-comp-treeOffset {
   padding-left: 2em;
 }

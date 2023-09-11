@@ -2,8 +2,22 @@
   color: blue;
 }
 
-.ui-ex-stack-trace {
+.ui-event-stack-trace {
   width: 100%;
   box-sizing: border-box;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-wrap: anywhere;
+  margin: 0;
+}
+
+.ui-event-details-pane {
+  border: chocolate 1px solid;
+}
+
+.ui-event-details-pane > * {
+  padding: .2rem;
+}
+
+.ui-event-details-pane .ui-event-extra {
+  background: antiquewhite;
 }

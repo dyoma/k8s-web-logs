@@ -25,7 +25,7 @@ export function EventListComponent(props: {events: List<LEvent>}) {
 
 export function EventInfoLine(props: {event: LEvent}) {
   const options = DisplayOptions.use()
-  return <div className="ui-comp-single-text-line">
+  return <div className="ui-comp-wrap-text ui-comp-limit-text-height">
     {options.trace && props.event.data.traceId ? <Trace.Link event={props.event}/> : null}
     {options.time ? <span className="mr2">{props.event.time.toISOString()}</span>: null }
     {options.pod ? <span className="mr2">{props.event.pod.name}</span> : null}
@@ -36,20 +36,22 @@ export function EventInfoLine(props: {event: LEvent}) {
 export function EventDetails(props: {event: LEvent}) {
   const options = DisplayOptions.use();
   const stackTrace = LogException.tryParseStackTrace(props.event.data.stack_trace);
-  return <div>
-    <div>{props.event.data.message}</div>
-    <div className="flex">
-      <FieldValue label="Trace">
-        {options.trace && props.event.data.traceId ? <Trace.Link event={props.event}/> : null}
-      </FieldValue>
-      <FieldValue label="Time" value={props.event.time.toISOString()}/>
-      <FieldValue label="POD" value={props.event.pod.name}/>
+  return <div className="mc-EventDetails ui-comp-wrap-text ui-event-details-pane">
+    <div className="ui-event-message">{props.event.data.message}</div>
+    <div className="ui-event-extra">
+      <div className="flex">
+        <FieldValue label="Trace">
+          {options.trace && props.event.data.traceId ? <Trace.Link event={props.event}/> : null}
+        </FieldValue>
+        <FieldValue label="Time" value={props.event.time.toISOString()}/>
+        <FieldValue label="POD" value={props.event.pod.name}/>
+      </div>
+      <div style={{display: "flex"}}>
+        <FieldValue label="Domain" value={props.event.data.domainId}/>
+        <FieldValue label="Logger" value={props.event.data.logger_name}/>
+      </div>
     </div>
-    <div style={{display: "flex"}}>
-      <FieldValue label="Domain" value={props.event.data.domainId}/>
-      <FieldValue label="Logger" value={props.event.data.logger_name}/>
-    </div>
-    {stackTrace ? <pre className="ui-ex-stack-trace">{stackTrace.wholeExceptionTrimmed}</pre> : null }
+    {stackTrace ? <pre className="ui-event-stack-trace">{stackTrace.wholeExceptionTrimmed}</pre> : null }
   </div>
 }
 
