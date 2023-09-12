@@ -29,7 +29,9 @@ export function GroupByExceptionClass(props: {events: ObservableSet<LEvent>}) {
   const exceptions = props.events.useFilter(event => !!event.data.stack_trace);
   exceptions.debugName = "Exceptions"
 
-  const byExClass = exceptions.useGroupByText(e => LogException.parseStackTrace(e.data.stack_trace).exClass);
+  const byExClass = exceptions.useGroupByText(
+      e => LogException.parseStackTrace(e.data.stack_trace).exClass,
+      LEvent.RECENT_FIRST_COMPARATOR);
   byExClass.debugName = "ExByClass"
 
   const byExClassSnapshot = byExClass.useSnapshot();

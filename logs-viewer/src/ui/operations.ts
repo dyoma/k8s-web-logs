@@ -15,9 +15,9 @@ export interface ObservableSet<T> {
 
   useTransform<D>(mapper: (t: T) => D | undefined, comparator?: Comparator<D>): ObservableSet<D>
 
-  useGroupBy<K>(grouper: (t: T) => K, keyId: (k: K) => string): GroupByOperation<T, K>
+  useGroupBy<K>(grouper: (t: T) => K, keyId: (k: K) => string, comparator?: (a: T, b: T) => number): GroupByOperation<T, K>
 
-  useGroupByText(grouper: (t: T) => string): GroupByOperation<T, string>
+  useGroupByText(grouper: (t: T) => string, comparator?: (a: T, b: T) => number): GroupByOperation<T, string>
 
   debugName: string
 
@@ -35,12 +35,12 @@ abstract class BaseObservableSet<T> implements ObservableSet<T> {
     return TransformOperation.useTransform(this, mapper, comparator)
   }
 
-  useGroupBy<K>(grouper: (t: T) => K, keyId: (k: K) => string): GroupByOperation<T, K> {
-    return GroupByOperation.useGrouper(this, grouper, keyId)
+  useGroupBy<K>(grouper: (t: T) => K, keyId: (k: K) => string, comparator?: (a: T, b: T) => number): GroupByOperation<T, K> {
+    return GroupByOperation.useGrouper(this, grouper, keyId, comparator)
   }
 
-  useGroupByText(grouper: (t: T) => string): GroupByOperation<T, string> {
-    return this.useGroupBy(grouper, s => s)
+  useGroupByText(grouper: (t: T) => string, comparator?: (a: T, b: T) => number): GroupByOperation<T, string> {
+    return this.useGroupBy(grouper, s => s, comparator)
   }
 
   abstract debugName: string;
@@ -196,12 +196,10 @@ export class GroupByOperation<T, K> {
 
   get debugName() { return this.subscriptions.debugName }
 
-  static useTextGrouper<T>(master: ObservableSet<T>, grouper: (t: T) => string): GroupByOperation<T, string> {
-    return this.useGrouper(master, grouper, s => s)
-  }
-
-  static useGrouper<T, K>(master: ObservableSet<T>, grouper: (t: T) => K, keyId: (k: K) => string): GroupByOperation<T, K> {
-    return React.useMemo(() => new GroupByOperation<T, K>(master, grouper, keyId), [master, grouper, keyId])
+  static useGrouper<T, K>(master: ObservableSet<T>, grouper: (t: T) => K, keyId: (k: K) => string, comparator?: (a: T, b: T) => number): GroupByOperation<T, K> {
+    return React.useMemo(
+        () => new GroupByOperation<T, K>(master, grouper, keyId, comparator),
+        [master, grouper, keyId, comparator])
   }
 
   useSnapshot(): ObjMap<K, List<T>> {

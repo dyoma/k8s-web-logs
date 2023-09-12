@@ -34,7 +34,7 @@ export class EventLoaderProcess {
     }
   }
   private running = false
-  readonly events = new SetHolder<LEvent>(this.subscriptionListener, Comparator.by(e => -e.time.getTime()))
+  readonly events = new SetHolder<LEvent>(this.subscriptionListener, LEvent.RECENT_FIRST_COMPARATOR)
   private lastSid = -1
   private readonly pods: Pod[] = []
   pingMillis: number
