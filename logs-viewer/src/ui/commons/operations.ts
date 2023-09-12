@@ -1,5 +1,5 @@
-import {Comparator, List, MutableObjMap, MutableObjSet, ObjMap} from "../utils/collections";
-import {Listeners, Notification, SubscriptionCounterWithListeners, SubscriptionListener} from "../utils/listeners";
+import {Comparator, List, MutableObjMap, MutableObjSet, ObjMap} from "../../utils/collections";
+import {Listeners, Notification, SubscriptionCounterWithListeners, SubscriptionListener} from "../../utils/listeners";
 import * as React from "react";
 
 /**

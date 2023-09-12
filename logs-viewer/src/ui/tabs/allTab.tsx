@@ -1,8 +1,8 @@
 import * as React from "react";
-import {GroupByOperation, ObservableSet} from "./operations";
-import {LEvent} from "../data/loadEvents";
-import {Comparator} from "../utils/collections";
-import {EventListComponent} from "./events";
+import {GroupByOperation, ObservableSet} from "../commons/operations";
+import {LEvent} from "../../data/loadEvents";
+import {Comparator} from "../../utils/collections";
+import {EventListComponent} from "../commons/events";
 import "./allTab.css"
 
 type ValueAndSetter<T> = [T, (setter: (prev: T) => T) => void]

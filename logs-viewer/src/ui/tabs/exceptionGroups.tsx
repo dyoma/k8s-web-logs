@@ -1,10 +1,10 @@
 import * as React from "react";
-import {ObservableSet} from "./operations";
-import {LogException} from "../data/exception";
-import {List} from "../utils/collections";
-import {LEvent} from "../data/loadEvents";
-import {ExpandableComponent, ListComponent} from "./components";
-import {EventListComponent} from "./events";
+import {ObservableSet} from "../commons/operations";
+import {LogException} from "../../data/exception";
+import {List} from "../../utils/collections";
+import {LEvent} from "../../data/loadEvents";
+import {ExpandableComponent, ListComponent} from "../commons/components";
+import {EventListComponent} from "../commons/events";
 
 class Group {
   constructor(readonly className: string, readonly events: List<LEvent>) {

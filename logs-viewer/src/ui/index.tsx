@@ -1,10 +1,10 @@
 import * as React from "react";
 import {createRoot} from 'react-dom/client';
-import {EventLoader} from "./eventLoader";
-import {TabbedPane} from "./tabs";
-import {GroupByExceptionClass} from "./exceptionGroups";
-import "./scroll.css"
-import {AllEvents} from "./allTab";
+import {EventLoader} from "./commons/eventLoader";
+import {TabbedPane} from "./commons/tabs";
+import {GroupByExceptionClass} from "./tabs/exceptionGroups";
+import "./commons/scroll.css"
+import {AllEvents} from "./tabs/allTab";
 
 const SERVER = "http://localhost:8123/api"
 
