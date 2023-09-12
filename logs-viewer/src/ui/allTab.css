@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  align-items: baseline;
 }
 
 .ui-gr-option {
@@ -20,4 +21,15 @@
   border-style: solid;
   border-color: #888888;
   border-width: 0 0 .5px 0;
+}
+
+.ui-gr-text-search {
+  display: flex;
+  flex-direction: row;
+  margin: .2rem;
+  align-items: baseline;
+}
+
+.ui-gr-text-search INPUT {
+  flex-grow: 1;
 }
