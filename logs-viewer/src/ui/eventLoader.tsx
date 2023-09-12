@@ -1,9 +1,8 @@
 import * as React from "react";
+import {ReactNode} from "react";
 import {SubscriptionListener} from "../utils/listeners";
 import {LEvent, loadEvents, Pod} from "../data/loadEvents";
-import {SetHolder, ObservableSet} from "./operations";
-import {ReactNode} from "react";
-import {Comparator} from "../utils/collections";
+import {ObservableSet, SetHolder} from "./operations";
 
 export function EventLoader(props: {apiUri: string, children: ReactNode | ReactNode[]}) {
   const loader = React.useMemo(() => new EventLoaderProcess(props.apiUri), [props.apiUri]);

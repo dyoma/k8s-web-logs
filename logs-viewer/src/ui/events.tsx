@@ -76,7 +76,8 @@ export namespace Trace {
       comp: <Tab traceId={traceId}/>,
       userData: {
         traceId: traceId
-      }
+      },
+      keepDOM: "TRACE:" + traceId
     })
   }
 

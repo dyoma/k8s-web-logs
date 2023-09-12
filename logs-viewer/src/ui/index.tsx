@@ -27,7 +27,8 @@ function LogsApp() {
       {
         name: "All",
         comp: <AllEvents events={allEvents}/>,
-        permanent: true
+        permanent: true,
+        keepDOM: "STD:All"
       }]}/>
   </>
 }
