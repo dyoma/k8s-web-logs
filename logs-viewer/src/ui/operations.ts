@@ -73,7 +73,7 @@ export class SetHolder<T> extends BaseObservableSet<T> {
 
   useSnapshot(): List<T> {
     const [list, setList] = React.useState(new List(this.eventArray));
-    React.useEffect(() => this.subscribe(() => setList(new List(this.eventArray))), [])
+    React.useEffect(() => this.subscribe(() => setList(new List(this.eventArray))), [this])
     return list
   }
 

@@ -1,0 +1,23 @@
+.ui-gr-option-pane {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.ui-gr-option {
+  border: blue 1px solid;
+  border-radius: 5px;
+  padding: .2rem;
+  margin: .2rem .2rem .2rem .2rem;
+}
+
+.ui-gr-active {
+  background: #176ef3;
+  color: white;
+}
+
+.ui-gr-bottom {
+  border-style: solid;
+  border-color: #888888;
+  border-width: 0 0 .5px 0;
+}

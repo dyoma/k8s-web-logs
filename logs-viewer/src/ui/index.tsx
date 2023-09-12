@@ -1,12 +1,10 @@
 import * as React from "react";
 import {createRoot} from 'react-dom/client';
 import {EventLoader} from "./eventLoader";
-import {EventListComponent} from "./events";
 import {TabbedPane} from "./tabs";
 import {GroupByExceptionClass} from "./exceptionGroups";
 import "./scroll.css"
-import {ObservableSet} from "./operations";
-import {LEvent} from "../data/loadEvents";
+import {AllEvents} from "./allTab";
 
 const SERVER = "http://localhost:8123/api"
 
@@ -32,13 +30,6 @@ function LogsApp() {
         permanent: true
       }]}/>
   </>
-}
-
-function AllEvents(props: {events: ObservableSet<LEvent>}) {
-  let filtered = props.events.useFilter(() => true)
-  filtered.debugName = "AllEvents"
-  const snapshot = filtered.useSnapshot();
-  return <EventListComponent events={snapshot.sublist(0, 500)}/>
 }
 
 export function initReactApp() {

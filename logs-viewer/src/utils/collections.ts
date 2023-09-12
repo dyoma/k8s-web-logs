@@ -115,10 +115,25 @@ export type Comparator<T> = (a: T, b: T) => number
 export namespace Comparator {
   export function by<T, K>(getKey: (v: T) => K): Comparator<T> {
     return (a: T, b: T) => {
-      const ka = getKey(a);
-      const kb = getKey(b);
+      const ka = getKey(a)
+      const kb = getKey(b)
       if (ka == kb) return 0
       return ka < kb ? -1 : 1
+    }
+  }
+
+  export function byKey<T, K>(getKey: (v: T) => K, comparator: Comparator<K>): Comparator<T> {
+    return (a: T, b: T) => {
+      const ka = getKey(a)
+      const kb = getKey(b)
+      return comparator(ka, kb)
+    }
+  }
+
+  export function natural(): Comparator<string | number> {
+    return (a, b) => {
+      if (a == b) return 0
+      return a < b ? -1 : 1
     }
   }
 }
