@@ -1,10 +1,10 @@
 import * as React from "react";
-import {ObservableSet} from "../commons/operations";
 import {LogException} from "../../data/exception";
 import {List} from "../../utils/collections";
 import {LEvent} from "../../data/loadEvents";
 import {ExpandableComponent, ListComponent} from "../commons/components";
-import {EventListComponent} from "../commons/events";
+import {DisplayableEvents, EventListComponent} from "../commons/events";
+import {EventLoader} from "../commons/eventLoader";
 
 class Group {
   constructor(readonly className: string, readonly events: List<LEvent>) {
@@ -25,12 +25,23 @@ class Group {
   }
 }
 
-export function GroupByExceptionClass(props: {events: ObservableSet<LEvent>}) {
-  const exceptions = props.events.useFilter(event => !!event.data.stack_trace);
+function getExceptionClass(event: LEvent) {
+  return LogException.parseStackTrace(event.data.stack_trace).exClass
+}
+
+function hasStackTrace(event: LEvent): boolean {
+  return !!event.data.stack_trace
+}
+
+export function GroupByExceptionClass() {
+  const displayableFilter = React.useContext(DisplayableEvents);
+  const events = EventLoader.useAllEvents()
+      .useFilter(displayableFilter)
+  const exceptions = events.useFilter(hasStackTrace)
   exceptions.debugName = "Exceptions"
 
   const byExClass = exceptions.useGroupByText(
-      e => LogException.parseStackTrace(e.data.stack_trace).exClass,
+      getExceptionClass,
       LEvent.RECENT_FIRST_COMPARATOR);
   byExClass.debugName = "ExByClass"
 

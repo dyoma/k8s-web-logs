@@ -6,6 +6,9 @@ import "./events.css"
 import {LogException} from "../../data/exception";
 import {TraceLink} from "../tabs/traceTab";
 
+function showAll() { return true }
+export const DisplayableEvents = React.createContext<(e: LEvent) => boolean>(showAll)
+
 function eventLineRenderer(event: LEvent) {
   return <div className="mc-eventLineRenderer">
     <ShortLongDetailsComponent

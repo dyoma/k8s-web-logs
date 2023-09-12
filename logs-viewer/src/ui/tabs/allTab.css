@@ -12,6 +12,10 @@
   margin: .2rem .2rem .2rem .2rem;
 }
 
+.ui-gr-option:hover {
+  cursor: pointer;
+}
+
 .ui-gr-active {
   background: #176ef3;
   color: white;

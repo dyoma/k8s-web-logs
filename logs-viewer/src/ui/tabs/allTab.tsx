@@ -1,11 +1,12 @@
 import * as React from "react";
-import {GroupByOperation, ObservableSet} from "../commons/operations";
+import {GroupByOperation} from "../commons/operations";
 import {LEvent} from "../../data/loadEvents";
 import {Comparator} from "../../utils/collections";
-import {EventListComponent} from "../commons/events";
+import {DisplayableEvents, EventListComponent} from "../commons/events";
 import "./allTab.css"
+import {ValueAndSetter} from "../commons/components";
+import {EventLoader} from "../commons/eventLoader";
 
-type ValueAndSetter<T> = [T, (setter: (prev: T) => T) => void]
 type GroupsProps = {
   events: GroupByOperation<LEvent, string>,
   groupOrder?: Comparator<string>,
@@ -40,10 +41,22 @@ function Groups(props: GroupsProps) {
   </>
 }
 
-export function AllEvents(props: {events: ObservableSet<LEvent>}) {
-  const byLogLevel = props.events.useGroupByText(e => e.data.level)
+function getLogLevel(event: LEvent) {
+  return event.data.level
+}
+
+function getPodName(event: LEvent) {
+  return event.pod.name
+}
+
+export function AllEvents() {
+  const displayableFilter = React.useContext(DisplayableEvents);
+  const events = EventLoader.useAllEvents()
+      .useFilter(displayableFilter)
+
+  const byLogLevel = events.useGroupByText(getLogLevel)
   byLogLevel.debugName = "byLogLevel"
-  const byPodName = props.events.useGroupByText(e => e.pod.name)
+  const byPodName = events.useGroupByText(getPodName)
   byPodName.debugName = "byPodName"
 
   const levels = React.useState(new Set<string>())
@@ -62,7 +75,7 @@ export function AllEvents(props: {events: ObservableSet<LEvent>}) {
     }
   }, [filterLevels, filterPods]);
 
-  const filterPodsAndLevels = props.events.useFilter(byGroupsFilter)
+  const filterPodsAndLevels = events.useFilter(byGroupsFilter)
   filterPodsAndLevels.debugName = "FilteredByLevel+Group"
 
   const [searchText, setSearchText] = React.useState("");

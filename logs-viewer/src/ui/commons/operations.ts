@@ -25,6 +25,7 @@ export interface ObservableSet<T> {
   useSnapshot(): List<T>
 }
 
+const strIdentity: (s: string) => string = s => s
 abstract class BaseObservableSet<T> implements ObservableSet<T> {
   useFilter(filter: (t: T) => boolean, comparator?: Comparator<T>): ObservableSet<T> {
     const mapper = React.useMemo(() => (t: T) => filter(t) ? t : undefined, [filter])
@@ -40,7 +41,7 @@ abstract class BaseObservableSet<T> implements ObservableSet<T> {
   }
 
   useGroupByText(grouper: (t: T) => string, comparator?: (a: T, b: T) => number): GroupByOperation<T, string> {
-    return this.useGroupBy(grouper, s => s, comparator)
+    return this.useGroupBy(grouper, strIdentity, comparator)
   }
 
   abstract debugName: string;
@@ -216,7 +217,7 @@ export class GroupByOperation<T, K> {
         })
         return newMap
       })
-    }), [])
+    }), [this])
     return map
   }
 

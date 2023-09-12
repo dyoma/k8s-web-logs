@@ -20,8 +20,9 @@ export function TraceLink(props: {event: LEvent}) {
 function TraceTab(props: {traceId: string}) {
   const options = DisplayOptions.use()
   const displayNoTrace = {...options, trace: false}
+  const filterTrace = React.useMemo(() => (e: LEvent) => e.data.traceId === props.traceId, [props.traceId]);
   const traceEvents = EventLoader.useAllEvents()
-      .useFilter(e => e.data.traceId === props.traceId)
+      .useFilter(filterTrace)
   traceEvents.debugName = `TraceId[${props.traceId}]`
   const traceSnapshot = traceEvents.useSnapshot();
 
