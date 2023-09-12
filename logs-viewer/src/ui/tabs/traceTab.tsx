@@ -22,7 +22,7 @@ function TraceTab(props: {traceId: string}) {
   const displayNoTrace = {...options, trace: false}
   const filterTrace = React.useMemo(() => (e: LEvent) => e.data.traceId === props.traceId, [props.traceId]);
   const traceEvents = EventLoader.useAllEvents()
-      .useFilter(filterTrace)
+      .useFilter(filterTrace, LEvent.RECENT_FIRST_COMPARATOR)
   traceEvents.debugName = `TraceId[${props.traceId}]`
   const traceSnapshot = traceEvents.useSnapshot();
 

@@ -84,7 +84,7 @@ export function AllEvents() {
       return !searchText || e.data.message.indexOf(searchText) >= 0
     }
   }, [searchText]);
-  const filterText = filterPodsAndLevels.useFilter(textFilter);
+  const filterText = filterPodsAndLevels.useFilter(textFilter, LEvent.RECENT_FIRST_COMPARATOR);
 
   const snapshot = filterText.useSnapshot();
   return <div className="ui-scroll-ancestor">
