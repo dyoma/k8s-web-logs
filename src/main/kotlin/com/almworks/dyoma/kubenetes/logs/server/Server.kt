@@ -3,20 +3,36 @@ package com.almworks.dyoma.kubenetes.logs.server
 import com.sun.net.httpserver.*
 import java.net.*
 import java.time.Instant
+import java.util.*
+import kotlin.collections.LinkedHashMap
 
 
-class Server {
+class Server(val db: EventDb, val port: Int) {
+  val url get() = "http://localhost:$port/"
+
   companion object {
-    fun start(sendEvents: SendEvents, port: Int) {
+    fun start(port: Int): Server {
+      val db = EventDb()
       val server = HttpServer.create(InetSocketAddress(port), 0)
-      println("Server at: http://localhost:$port/")
-      server.createContext("/api/events", EventsHandler(sendEvents))
+      server.createContext("/api/events", EventsHandler(SendEvents(db)))
       server.executor = null // creates a default executor
       server.start()
+      return Server(db, port).also {
+        println("Server at: ${it.url}")
+      }
+    }
+
+    fun startDefault(): Server {
+      val properties = Properties()
+        .also { properties ->
+          Server::class.java.getResourceAsStream("server.properties")!!.use { properties.load(it.reader()) }
+        }
+      val port = Integer.parseInt(properties.getProperty("server.port"))
+      return start(port)
     }
   }
 
-  class EventsHandler(private val sendEvents: SendEvents) : HttpHandler {
+  private class EventsHandler(private val sendEvents: SendEvents) : HttpHandler {
     private data class GetEventsParams(val sid: Long?, val time: Instant?) {
       companion object {
         fun fromUri(uri: URI): GetEventsParams {

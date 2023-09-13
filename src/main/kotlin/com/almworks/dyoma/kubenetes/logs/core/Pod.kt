@@ -1,4 +1,4 @@
-package com.almworks.dyoma.kubenetes.logs
+package com.almworks.dyoma.kubenetes.logs.core
 
 import io.kubernetes.client.openapi.models.V1Pod
 import java.time.format.DateTimeFormatter

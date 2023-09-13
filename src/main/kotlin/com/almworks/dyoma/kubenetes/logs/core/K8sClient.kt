@@ -1,4 +1,4 @@
-package com.almworks.dyoma.kubenetes.logs
+package com.almworks.dyoma.kubenetes.logs.core
 
 import io.kubernetes.client.PodLogs
 import io.kubernetes.client.openapi.ApiClient

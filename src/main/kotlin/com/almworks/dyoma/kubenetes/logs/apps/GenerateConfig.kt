@@ -1,4 +1,4 @@
-package com.almworks.dyoma.kubenetes.logs
+package com.almworks.dyoma.kubenetes.logs.apps
 
 fun main() {
   val rootDir = "" // location of your `ca.crt`, `client.crt`, `client.key` files.
