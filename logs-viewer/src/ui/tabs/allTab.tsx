@@ -1,5 +1,5 @@
 import * as React from "react";
-import {GroupByOperation} from "../commons/operations";
+import {GroupByOperation, ObservableSet} from "../commons/operations";
 import {LEvent} from "../../data/loadEvents";
 import {Comparator} from "../../utils/collections";
 import {DisplayableEvents, EventListComponent} from "../commons/events";
@@ -41,59 +41,71 @@ function Groups(props: GroupsProps) {
   </>
 }
 
-function getLogLevel(event: LEvent) {
-  return event.data.level
+class ByValueSetFilter {
+  private constructor(private readonly selectionAndSetter: ValueAndSetter<Set<string>>,
+                      readonly grouper: (e: LEvent) => string,
+                      readonly groups: GroupByOperation<LEvent, string>) {}
+
+  static use(events: ObservableSet<LEvent>, grouper: (e: LEvent) => string): ByValueSetFilter {
+    const groups = events.useGroupByText(grouper)
+    groups.debugName = "byValue-" + grouper.name
+
+    const selectionAndSetter = React.useState(new Set<string>())
+    return new ByValueSetFilter(selectionAndSetter, grouper, groups)
+  }
+
+  get selection(): Set<string> { return this.selectionAndSetter[0] }
+
+  isAccepted(event: LEvent) {
+    return this.selection.size == 0 || this.selection.has(this.grouper(event))
+  }
+
+  component(comparator?: Comparator<string>) {
+    return <Groups events={this.groups} selection={this.selectionAndSetter} groupOrder={comparator}/>
+  }
 }
 
-function getPodName(event: LEvent) {
-  return event.pod.name
+function useFilterByText(events: ObservableSet<LEvent>): [ObservableSet<LEvent>, React.JSX.Element] {
+  const [text, setText] = React.useState("");
+  const filter = React.useMemo(() => {
+    return (e: LEvent) => {
+      return !text || e.data.message.indexOf(text) >= 0
+    }
+  }, [text]);
+  return [
+    events.useFilter(filter, LEvent.RECENT_FIRST_COMPARATOR),
+    <input type="text" placeholder="Search for substring in messages" value={text}
+           onChange={e => setText(e.target.value)}/>
+  ]
 }
+
+function getLogLevel(event: LEvent) { return event.data.level }
+function getPodName(event: LEvent) { return event.pod.name }
 
 export function AllEvents() {
   const displayableFilter = React.useContext(DisplayableEvents);
   const events = EventLoader.useAllEvents()
       .useFilter(displayableFilter)
 
-  const byLogLevel = events.useGroupByText(getLogLevel)
-  byLogLevel.debugName = "byLogLevel"
-  const byPodName = events.useGroupByText(getPodName)
-  byPodName.debugName = "byPodName"
+  const byPodName = ByValueSetFilter.use(events, getPodName)
+  const byLogLevel = ByValueSetFilter.use(events, getLogLevel);
 
-  const levels = React.useState(new Set<string>())
-  const pods = React.useState(new Set<string>())
-  const filterLevels = levels[0]
-  const filterPods = pods[0]
   const byGroupsFilter = React.useMemo(() => {
-    console.log("New filter")
-    return (e: LEvent) => {
-      const pod = e.pod.name;
-      const level = e.data.level;
-      if (filterLevels.size > 0 && !filterLevels.has(level)) return false
-      // noinspection RedundantIfStatementJS
-      if (filterPods.size > 0 && !filterPods.has(pod)) return false
-      return true
-    }
-  }, [filterLevels, filterPods]);
+    return (e: LEvent) => byLogLevel.isAccepted(e) && byPodName.isAccepted(e);
+  }, [byLogLevel.selection, byPodName.selection]);
 
   const filterPodsAndLevels = events.useFilter(byGroupsFilter)
   filterPodsAndLevels.debugName = "FilteredByLevel+Group"
 
-  const [searchText, setSearchText] = React.useState("");
-  const textFilter = React.useMemo(() => {
-    return (e: LEvent) => {
-      return !searchText || e.data.message.indexOf(searchText) >= 0
-    }
-  }, [searchText]);
-  const filterText = filterPodsAndLevels.useFilter(textFilter, LEvent.RECENT_FIRST_COMPARATOR);
+  const [filtered, filterByTextComp] = useFilterByText(filterPodsAndLevels);
+  const snapshot = filtered.useSnapshot();
 
-  const snapshot = filterText.useSnapshot();
   return <div className="ui-scroll-ancestor">
-    <div className="ui-gr-option-pane">Levels:<Groups events={byLogLevel} selection={levels}/></div>
-    <div className="ui-gr-option-pane">PODs:<Groups events={byPodName} selection={pods} groupOrder={Comparator.natural()}/></div>
+    <div className="ui-gr-option-pane">Levels: {byLogLevel.component()} </div>
+    <div className="ui-gr-option-pane">PODs: {byPodName.component(Comparator.NATURAL)}</div>
     <div className="ui-gr-text-search">
       <span className="mr2">Filter by Text:</span>
-      <input type="text" placeholder="Search for substring in messages" value={searchText}
-             onChange={e => setSearchText(e.target.value)}/>
+      { filterByTextComp }
     </div>
     <div className="ui-gr-bottom"/>
     <EventListComponent events={snapshot.sublist(0, 200)}/>

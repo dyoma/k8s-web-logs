@@ -130,11 +130,9 @@ export namespace Comparator {
     }
   }
 
-  export function natural(): Comparator<string | number> {
-    return (a, b) => {
-      if (a == b) return 0
-      return a < b ? -1 : 1
-    }
+  export const NATURAL: Comparator<string | number> = (a: string | number, b: string | number) => {
+    if (a == b) return 0
+    return a < b ? -1 : 1
   }
 }
 
