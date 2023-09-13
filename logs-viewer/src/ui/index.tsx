@@ -61,10 +61,6 @@ function LogsApp() {
         keepDOM: "STD:Exceptions"
       },
       {
-        name: "Temp",
-        comp: <h3>Hello!</h3>
-      },
-      {
         name: "All",
         comp: <AllEvents/>,
         permanent: true,
