@@ -1,5 +1,7 @@
 package com.almworks.dyoma.kubenetes.logs.server
 
+import com.almworks.dyoma.kubenetes.logs.core.PodInfo
+import com.almworks.dyoma.kubenetes.logs.core.createObjectMapper
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -12,7 +14,7 @@ private fun JsonGenerator.composeObject(block: JsonGenerator.() -> Unit) {
   writeEndObject()
 }
 
-class SendEvents(private val db: EventDb) {
+internal class SendEvents(private val db: EventDb) {
   private val mapper = createObjectMapper()
     .setSerializationInclusion(JsonInclude.Include.NON_NULL)
     .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)

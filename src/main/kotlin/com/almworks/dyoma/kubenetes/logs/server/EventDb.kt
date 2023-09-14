@@ -1,5 +1,6 @@
 package com.almworks.dyoma.kubenetes.logs.server
 
+import com.almworks.dyoma.kubenetes.logs.core.PodEvent
 import java.time.Instant
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read

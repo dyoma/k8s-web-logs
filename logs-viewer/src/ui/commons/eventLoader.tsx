@@ -1,8 +1,8 @@
 import * as React from "react";
-import {SubscriptionListener} from "../utils/listeners";
-import {loadEvents, Pod} from "../data/loadEvents";
-import {EventListHolder, ObservableEventList} from "./operations";
 import {ReactNode} from "react";
+import {SubscriptionListener} from "../../utils/listeners";
+import {LEvent, loadEvents, Pod} from "../../data/loadEvents";
+import {ObservableSet, SetHolder} from "./operations";
 
 export function EventLoader(props: {apiUri: string, children: ReactNode | ReactNode[]}) {
   const loader = React.useMemo(() => new EventLoaderProcess(props.apiUri), [props.apiUri]);
@@ -16,7 +16,7 @@ export namespace EventLoader {
     return React.useContext(Context)!!
   }
 
-  export function useAllEvents(): ObservableEventList {
+  export function useAllEvents(): ObservableSet<LEvent> {
     return useProcess().events
   }
 }
@@ -33,13 +33,14 @@ export class EventLoaderProcess {
     }
   }
   private running = false
-  readonly events = new EventListHolder(this.subscriptionListener, "Event-Loader")
+  readonly events = new SetHolder<LEvent>(this.subscriptionListener, LEvent.RECENT_FIRST_COMPARATOR)
   private lastSid = -1
   private readonly pods: Pod[] = []
   pingMillis: number
 
   constructor(readonly apiUri: string, pingMillis?: number) {
     this.pingMillis = pingMillis || 5000
+    this.events.debugName = "Event-Loader"
   }
 
   private async pingServer() {

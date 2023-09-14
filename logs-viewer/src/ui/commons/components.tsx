@@ -1,7 +1,9 @@
 import * as React from "react";
 import {ReactNode} from "react";
-import {List} from "../utils/collections";
+import {List} from "../../utils/collections";
 import "./components.css"
+
+export type ValueAndSetter<T> = [T, (setter: (prev: T) => T) => void]
 
 export type DisplayOptions = {
   trace: boolean,

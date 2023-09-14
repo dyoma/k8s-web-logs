@@ -1,6 +1,6 @@
 import * as React from "react";
 import "./tabs.css"
-import {List} from "../utils/collections";
+import {List} from "../../utils/collections";
 
 type TabsState = {
   tabs: TabbedPane.Tab[],

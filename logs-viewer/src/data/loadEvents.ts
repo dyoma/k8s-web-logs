@@ -1,5 +1,5 @@
 import axios from "axios";
-import {List} from "../utils/collections";
+import {Comparator, List} from "../utils/collections";
 
 namespace Raw {
   export type Pod = {
@@ -46,6 +46,8 @@ export class LEvent {
       readonly pod: Pod,
       readonly data: EventData
   ) {}
+
+  static RECENT_FIRST_COMPARATOR: Comparator<LEvent> = Comparator.by(e => -e.time.getTime())
 }
 
 export class EventsUpdate {

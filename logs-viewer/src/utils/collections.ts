@@ -13,6 +13,13 @@ export class List<T> {
     return new List(filteredEvents)
   }
 
+  sublist(begin: number, end: number): List<T> {
+    if (end > this.elements.length) end = this.elements.length
+    if (begin === 0 && end === this.elements.length) return this
+    if (begin >= end) return List.empty()
+    return new List(this.elements.slice(begin, end))
+  }
+
   groupBy<K>(getKey: (t: T) => K): Map<K, List<T>> {
     const map = new Map<K, T[]>()
     this.elements.forEach(e => {
@@ -52,6 +59,9 @@ export class List<T> {
   }
 }
 
+/**
+ * This is a read-only map from keys of any type to values. {@link keyId} defines equality for keys by converting them to `string`
+ */
 export class ObjMap<K, V> {
   protected readonly valueMap = new Map<string, V>()
   protected readonly keys: K[] = []
@@ -98,12 +108,32 @@ declare global {
 }
 
 function sortBy<T, K>(this: T[], getKey: (v: T) => K) {
-  return this.sort((a, b) => {
-    const ka = getKey(a);
-    const kb = getKey(b);
-    if (ka == kb) return 0
-    return ka < kb ? -1 : 1
-  })
+  return this.sort(Comparator.by(getKey))
+}
+
+export type Comparator<T> = (a: T, b: T) => number
+export namespace Comparator {
+  export function by<T, K>(getKey: (v: T) => K): Comparator<T> {
+    return (a: T, b: T) => {
+      const ka = getKey(a)
+      const kb = getKey(b)
+      if (ka == kb) return 0
+      return ka < kb ? -1 : 1
+    }
+  }
+
+  export function byKey<T, K>(getKey: (v: T) => K, comparator: Comparator<K>): Comparator<T> {
+    return (a: T, b: T) => {
+      const ka = getKey(a)
+      const kb = getKey(b)
+      return comparator(ka, kb)
+    }
+  }
+
+  export const NATURAL: Comparator<string | number> = (a: string | number, b: string | number) => {
+    if (a == b) return 0
+    return a < b ? -1 : 1
+  }
 }
 
 Array.prototype.sortBy = sortBy

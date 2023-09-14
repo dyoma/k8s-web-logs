@@ -34,9 +34,16 @@
   font-size: 75%;
 }
 
+.ui-comp-control-long {
+  border: black 1px solid;
+  padding: .15rem .5rem;
+  border-radius: 5px;
+  background: #eaeaea;
+}
+
 .ui-comp-control:hover, .ui-comp-control-long:hover {
   cursor: pointer;
-  background: aqua;
+  background: #cbd4fc;
 }
 
 .ui-comp-label {
@@ -62,6 +69,10 @@
 
 .mr3 {
   margin-right: .8em;
+}
+
+.mb2 {
+  margin-bottom: .4em;
 }
 
 .mb3 {
