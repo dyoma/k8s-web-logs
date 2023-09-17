@@ -5,41 +5,73 @@ import {TabbedPane} from "../commons/tabs";
 import {LEvent} from "../../data/loadEvents";
 import {EventListComponent} from "../commons/events";
 
+type RefType = {
+  tabIdPrefix: string,
+  dataField: string,
+  displayOption: keyof DisplayOptions
+}
+
+const TRACE_ID: RefType = {
+  tabIdPrefix: "TR",
+  dataField: "traceId",
+  displayOption: "trace"
+}
+
+const SPAN_ID: RefType = {
+  tabIdPrefix: "SP",
+  dataField: "spanId",
+  displayOption: "span"
+}
+
 export function TraceLink(props: {event: LEvent}) {
-  const traceId = props.event.data.traceId;
-  if (!traceId) return <></>
-  const shorten = traceId.length > 4 ? traceId.substring(traceId.length - 4) : traceId
+  return <RefLink event={props.event} type={TRACE_ID}/>
+}
+
+export function SpanIdLink(props: {event: LEvent}) {
+  return <RefLink event={props.event} type={SPAN_ID}/>
+}
+
+function RefLink(props: {event: LEvent, type: RefType}) {
+  const type = props.type;
+  const options = DisplayOptions.use();
+
+  if (!options[type.displayOption]) return <></>
+  const refValue = props.event.data[type.dataField]
+  if (!refValue) return <></>
+  const shorten = refValue.length > 4 ? refValue.substring(refValue.length - 4) : refValue
   const tabController = TabbedPane.use();
   function onClick(e: React.MouseEvent) {
     e.preventDefault()
-    addOrSelectTraceTab(tabController, traceId)
+    addOrSelectRefValueTab(tabController, refValue, type)
   }
-  return <a className="mr2 ui-events-trace-link" href="#" onClick={onClick}>tr-{shorten}</a>
+  return <a className="mr2 ui-events-trace-link" href="#" onClick={onClick}>{type.tabIdPrefix}-{shorten}</a>
 }
 
-function TraceTab(props: {traceId: string}) {
+function RefValueTab(props: {refValue: string, type: RefType}) {
+  const type = props.type;
   const options = DisplayOptions.use()
-  const displayNoTrace = {...options, trace: false}
-  const filterTrace = React.useMemo(() => (e: LEvent) => e.data.traceId === props.traceId, [props.traceId]);
-  const traceEvents = EventLoader.useAllEvents()
-      .useFilter(filterTrace, LEvent.RECENT_FIRST_COMPARATOR)
-  traceEvents.debugName = `TraceId[${props.traceId}]`
-  const traceSnapshot = traceEvents.useSnapshot();
+  const displayNoRef = type.displayOption ? {...options, [type.displayOption]: false} : options
+  const filter = React.useMemo(() => (e: LEvent) => e.data[type.dataField] === props.refValue, [props.refValue]);
+  const events = EventLoader.useAllEvents()
+      .useFilter(filter, LEvent.RECENT_FIRST_COMPARATOR)
+  events.debugName = `${type.tabIdPrefix}[${props.refValue}]`
+  const snapshot = events.useSnapshot();
 
-  return <DisplayOptions.Context.Provider value={displayNoTrace}>
-    <EventListComponent events={traceSnapshot}/>
+  return <DisplayOptions.Context.Provider value={displayNoRef}>
+    <EventListComponent events={snapshot}/>
   </DisplayOptions.Context.Provider>
 }
 
-function addOrSelectTraceTab(controller: TabbedPane.Controller, traceId: string) {
-  const index = controller.tabs.findIndex(tab => tab.userData?.traceId === traceId);
+function addOrSelectRefValueTab(controller: TabbedPane.Controller, refValue: string, type: RefType) {
+  const tabId = `${type.tabIdPrefix}:${refValue}`
+  const index = controller.tabs.findIndex(tab => tab.userData?.tabId === tabId);
   if (index >= 0) controller.selectTab(index)
   else controller.addAndSelect({
-    name: `TR:${traceId}`,
-    comp: <TraceTab traceId={traceId}/>,
+    name: tabId,
+    comp: <RefValueTab refValue={refValue} type={type}/>,
     userData: {
-      traceId: traceId
+      tabId: tabId
     },
-    keepDOM: "TRACE:" + traceId
+    keepDOM: tabId
   })
 }

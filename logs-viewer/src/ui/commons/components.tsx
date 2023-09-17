@@ -7,6 +7,7 @@ export type ValueAndSetter<T> = [T, (setter: (prev: T) => T) => void]
 
 export type DisplayOptions = {
   trace: boolean,
+  span: boolean
   time: boolean,
   pod: boolean,
   isException: boolean
@@ -15,6 +16,7 @@ export type DisplayOptions = {
 export namespace DisplayOptions {
   export const Context = React.createContext<DisplayOptions>({
     trace: true,
+    span: true,
     time: true,
     pod: true,
     isException: true

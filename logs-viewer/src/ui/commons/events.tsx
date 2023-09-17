@@ -4,7 +4,7 @@ import {List} from "../../utils/collections";
 import {DisplayOptions, FieldValue, ListComponent, ShortLongDetailsComponent} from "./components";
 import "./events.css"
 import {LogException} from "../../data/exception";
-import {TraceLink} from "../tabs/traceTab";
+import {SpanIdLink, TraceLink} from "../tabs/traceTab";
 
 function showAll() { return true }
 export const DisplayableEvents = React.createContext<(e: LEvent) => boolean>(showAll)
@@ -27,7 +27,8 @@ export function EventListComponent(props: {events: List<LEvent>}) {
 export function EventInfoLine(props: {event: LEvent}) {
   const options = DisplayOptions.use()
   return <div className="ui-comp-wrap-text ui-comp-limit-text-height">
-    {options.trace && props.event.data.traceId ? <TraceLink event={props.event}/> : null}
+    <TraceLink event={props.event}/>
+    <SpanIdLink event={props.event}/>
     {options.time ? <span className="mr2">{props.event.time.toISOString()}</span>: null }
     {options.pod ? <span className="ui-event-pod mr2">{props.event.pod.name}</span> : null}
     <LogLevel event={props.event}/>
