@@ -68,8 +68,19 @@ class ByValueSetFilter {
 function useFilterByText(events: ObservableSet<LEvent>): [ObservableSet<LEvent>, React.JSX.Element] {
   const [text, setText] = React.useState("");
   const filter = React.useMemo(() => {
+    const lowerText = text.toLowerCase();
     return (e: LEvent) => {
-      return !text || e.data.message.indexOf(text) >= 0
+      if (!lowerText) return true
+      for (let key in e.data) {
+        if (Object.prototype.hasOwnProperty.call(e.data, key)) {
+          const value = e.data[key]
+          if (typeof value === "string") {
+            const lowerValue = value.toLowerCase();
+            if (lowerValue.indexOf(lowerText) >= 0) return true
+          }
+        }
+      }
+      return false
     }
   }, [text]);
   return [
