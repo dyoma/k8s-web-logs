@@ -51,6 +51,8 @@
   opacity: 80%;
   margin-right: .4rem;
   font-size: 90%;
+  overflow-wrap: unset;
+  white-space: unset;
 }
 
 .ui-comp-list {

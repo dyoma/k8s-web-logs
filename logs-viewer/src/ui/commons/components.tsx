@@ -7,15 +7,19 @@ export type ValueAndSetter<T> = [T, (setter: (prev: T) => T) => void]
 
 export type DisplayOptions = {
   trace: boolean,
+  span: boolean
   time: boolean,
-  pod: boolean
+  pod: boolean,
+  isException: boolean
 }
 
 export namespace DisplayOptions {
   export const Context = React.createContext<DisplayOptions>({
     trace: true,
+    span: true,
     time: true,
-    pod: true
+    pod: true,
+    isException: true
   })
 
   export function use(): DisplayOptions {
@@ -47,14 +51,22 @@ export function ShortLongDetailsComponent(props: {header: React.JSX.Element, bod
   </div>
 }
 
+function isEmpty(value: any) {
+  if (!value) return true
+  return typeof value === "string" && !value.trim();
 
-export function FieldValue(props: {label: String, value?: String, children?: ReactNode | ReactNode[]}) {
-  const value = props.value;
+}
+export function FieldValue(props: {label: String, value?: String | number, displayInline?: boolean, valueClass?: string, children?: ReactNode | ReactNode[]}) {
+  const value = typeof props.value === "object" ? JSON.stringify(props.value) : props.value;
   const children = props.children;
-  if ((!value || !value.trim()) && (!children || (Array.isArray(children) && children.length === 0))) return null
-  return <div className="mr3">
+  if (isEmpty(value) && (!children || (Array.isArray(children) && children.length === 0))) return null
+  const content = <>
     <span className="ui-comp-label">{props.label}:</span>
-    {value ? <span>{value}</span> : null}
+    {value ? <span className={props.valueClass || ""}>{value}</span> : null}
     {children}
+  </>
+  if (props.displayInline) return content
+  return <div className="mr3">
+    {content}
   </div>
 }

@@ -18,6 +18,40 @@
   padding: .2rem;
 }
 
+.ui-event-value-unknown {
+  word-break: break-all;
+}
+
 .ui-event-details-pane .ui-event-extra {
   background: antiquewhite;
+}
+
+.ui-event-pod {
+  font-size: 85%;
+  font-weight: bold;
+}
+
+.ui-event-log-level {
+  display: inline-block;
+  font-size: 65%;
+  border: black 1px solid;
+  margin-right: .1rem;
+  border-radius: 5px;
+  padding: 3px .3rem 1px .3rem;
+}
+
+.ui-event-log-level-info {
+  background: #88f088;
+}
+
+.ui-event-log-level-warn {
+  background: #eee671;
+}
+
+.ui-event-log-level-error {
+  background: #ff8989;
+}
+
+.ui-event-log-level-ex {
+  background: #d4a9f7;
 }

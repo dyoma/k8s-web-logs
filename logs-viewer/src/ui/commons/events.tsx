@@ -4,7 +4,7 @@ import {List} from "../../utils/collections";
 import {DisplayOptions, FieldValue, ListComponent, ShortLongDetailsComponent} from "./components";
 import "./events.css"
 import {LogException} from "../../data/exception";
-import {TraceLink} from "../tabs/traceTab";
+import {SpanIdLink, TraceLink} from "../tabs/traceTab";
 
 function showAll() { return true }
 export const DisplayableEvents = React.createContext<(e: LEvent) => boolean>(showAll)
@@ -27,18 +27,21 @@ export function EventListComponent(props: {events: List<LEvent>}) {
 export function EventInfoLine(props: {event: LEvent}) {
   const options = DisplayOptions.use()
   return <div className="ui-comp-wrap-text ui-comp-limit-text-height">
-    {options.trace && props.event.data.traceId ? <TraceLink event={props.event}/> : null}
+    <TraceLink event={props.event}/>
+    <SpanIdLink event={props.event}/>
     {options.time ? <span className="mr2">{props.event.time.toISOString()}</span>: null }
-    {options.pod ? <span className="mr2">{props.event.pod.name}</span> : null}
+    {options.pod ? <span className="ui-event-pod mr2">{props.event.pod.name}</span> : null}
+    <LogLevel event={props.event}/>
     <span className="mr2">{props.event.data.message}</span>
   </div>
 }
 
+const SKIP_EVENT_PROPERTIES = new Set<string>(["domainId", "logger_name", "stack_trace", "traceId", "message"])
 export function EventDetails(props: {event: LEvent}) {
   const options = DisplayOptions.use();
   const stackTrace = LogException.tryParseStackTrace(props.event.data.stack_trace);
   return <div className="mc-EventDetails ui-comp-wrap-text ui-event-details-pane">
-    <div className="ui-event-message">{props.event.data.message}</div>
+    <div className="ui-event-message"><LogLevel event={props.event}/>{props.event.data.message}</div>
     <div className="ui-event-extra">
       <div className="flex">
         <FieldValue label="Trace">
@@ -51,8 +54,32 @@ export function EventDetails(props: {event: LEvent}) {
         <FieldValue label="Domain" value={props.event.data.domainId}/>
         <FieldValue label="Logger" value={props.event.data.logger_name}/>
       </div>
+      <div>
+        { Object.getOwnPropertyNames(props.event.data).map(key => {
+          if (SKIP_EVENT_PROPERTIES.has(key)) return null
+          return <>
+            <FieldValue key={key} label={key} value={props.event.data[key]} displayInline={true} valueClass="ui-event-value-unknown"/>
+            <span className="mr2"/>
+          </>
+        })}
+      </div>
     </div>
     {stackTrace ? <pre className="ui-event-stack-trace">{stackTrace.wholeExceptionTrimmed}</pre> : null }
   </div>
 }
 
+const LEVEL_TO_CLASS = new Map<string, string>()
+LEVEL_TO_CLASS.set("INFO", "ui-event-log-level-info")
+LEVEL_TO_CLASS.set("WARN", "ui-event-log-level-warn")
+LEVEL_TO_CLASS.set("ERROR", "ui-event-log-level-error")
+
+function LogLevel(props: {event: LEvent}) {
+  const options = DisplayOptions.use();
+  const level = props.event.data.level;
+  const stackTrace = props.event.data.stack_trace;
+  const cls = LEVEL_TO_CLASS.get(level) || ""
+  return <span className="mr2">
+    <span className={"ui-event-log-level " + cls}>{level}</span>
+    { options.isException && !!stackTrace ? <span className="ui-event-log-level ui-event-log-level-ex">EX</span> : null }
+    </span>
+}
