@@ -22,8 +22,9 @@ You share your server via [ngrok](https://ngrok.com/): `ngrok http 8123` and sen
 * In terminal `cd` to [logs-viewer](logs-viewer)
 * Run `npm install`
 * Run `npm run build`. Other options are: `build-dev` and `build-watch`
-* Open in Idea [index.html](logs-viewer/dist/index.html) and open it in your favorite browser (I tested with Firefox)
-* Remove the query of the `index.html` URL, otherwise the page automatically reloads on any change. 
+
+The server serves static content (the WebApp). 
+Its location is configured in the `staticContent.path` property in [server.properties](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/server.properties). 
 
 ## Know Problems
 * **Server.** All logs loaded from the cluster remains in JVM heap forever. So, the server consumes more memory than needed.
