@@ -1,24 +1,28 @@
 package com.almworks.dyoma.kubenetes.logs.server
 
 import com.sun.net.httpserver.*
+import org.slf4j.LoggerFactory
+import java.io.File
 import java.net.*
 import java.time.Instant
 import java.util.*
-import kotlin.collections.LinkedHashMap
 
 
-class Server(val db: EventDb, val port: Int) {
+class Server(val db: EventDb, val port: Int, val server: HttpServer) {
   val url get() = "http://localhost:$port/"
 
   companion object {
+    private val log = LoggerFactory.getLogger(Server::class.java)
+
     fun start(port: Int): Server {
       val db = EventDb()
       val server = HttpServer.create(InetSocketAddress(port), 0)
       server.createContext("/api/events", EventsHandler(SendEvents(db)))
       server.executor = null // creates a default executor
       server.start()
-      return Server(db, port).also {
+      return Server(db, port, server).also {
         println("Server at: ${it.url}")
+        println("Share your server over internet (run in terminal): ngrok http ${it.port}")
       }
     }
 
@@ -28,7 +32,38 @@ class Server(val db: EventDb, val port: Int) {
           Server::class.java.getResourceAsStream("server.properties")!!.use { properties.load(it.reader()) }
         }
       val port = Integer.parseInt(properties.getProperty("server.port"))
-      return start(port)
+      val server = start(port)
+      properties.getProperty("staticContent.path")?.let { path ->
+        val staticDir = File(path)
+        staticDir.listFiles()?.forEach { file ->
+          if (file.isDirectory) {
+            server.addStaticContentHandler(file, "/${file.name}/")
+          } else {
+            server.addStaticContentHandler(file, "/${file.name}")
+          }
+        }
+        File(staticDir, "index.html").takeIf { it.exists() }?.let { server.addStaticContentHandler(it, "/") }
+      }
+      return server
+    }
+  }
+
+  fun addStaticContentHandler(file: File, path: String) {
+    log.info("Adding static content handler for $path")
+    server.createContext(path, StaticContentHandler(path, file))
+  }
+
+  private class StaticContentHandler(private val pathPrefix: String, private val root: File) : HttpHandler {
+    override fun handle(exchange: HttpExchange) {
+      val path = exchange.requestURI.path.substringAfter(pathPrefix)
+      val file = File(root, path)
+      if (!file.exists()) {
+        exchange.sendResponseHeaders(404, 0)
+        exchange.responseBody.use { it.write("Not found: $path".toByteArray()) }
+        return
+      }
+      exchange.sendResponseHeaders(200, file.length())
+      exchange.responseBody.use { file.inputStream().copyTo(it) }
     }
   }
 
