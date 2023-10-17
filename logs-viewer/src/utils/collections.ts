@@ -112,22 +112,44 @@ function sortBy<T, K>(this: T[], getKey: (v: T) => K) {
 }
 
 export type Comparator<T> = (a: T, b: T) => number
+export type ComparatorBuilder<T> = Comparator<T> & {
+  then(comparator: Comparator<T>): ComparatorBuilder<T>
+  thenBy<K>(getKey: (v: T) => K): ComparatorBuilder<T>
+}
 export namespace Comparator {
-  export function by<T, K>(getKey: (v: T) => K): Comparator<T> {
-    return (a: T, b: T) => {
+  export function by<T, K>(getKey: (v: T) => K): ComparatorBuilder<T> {
+    const comp = (a: T, b: T) => {
       const ka = getKey(a)
       const kb = getKey(b)
       if (ka == kb) return 0
       return ka < kb ? -1 : 1
     }
+    return addMethods((a: T, b: T) => {
+      const ka = getKey(a)
+      const kb = getKey(b)
+      if (ka == kb) return 0
+      return ka < kb ? -1 : 1
+    })
   }
 
-  export function byKey<T, K>(getKey: (v: T) => K, comparator: Comparator<K>): Comparator<T> {
-    return (a: T, b: T) => {
+  export function byKey<T, K>(getKey: (v: T) => K, comparator: Comparator<K>): ComparatorBuilder<T> {
+    return addMethods((a: T, b: T) => {
       const ka = getKey(a)
       const kb = getKey(b)
       return comparator(ka, kb)
+    })
+  }
+
+  function addMethods<T>(comp: Comparator<T> | any): ComparatorBuilder<T> {
+    comp.then = (comparator: Comparator<T>) => {
+      return (a: T, b: T) => {
+        const res = comp(a, b);
+        if (res !== 0) return res
+        return comparator(a, b)
+      }
     }
+    comp.thenBy = (getKey: (v: T) => any) => comp.then(Comparator.by(getKey))
+    return comp
   }
 
   export const NATURAL: Comparator<string | number> = (a: string | number, b: string | number) => {
