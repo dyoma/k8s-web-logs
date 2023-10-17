@@ -1,27 +1,22 @@
 ## How to Use It
 ### Prepare kubeConfig.yml
 1. Find you `env.sh` you use to configure kubectl and docker (example location: `$HOME/.kube/dyoma-1.dev.alm.works/env.sh`)
-2. Open and update [GenerateConfig.kt](src/main/kotlin/com/almworks/dyoma/kubenetes/logs/apps/GenerateConfig.kt)
-3. Run `GenerateConfig.kt`
-4. Create [kubeConfig.yml](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/kubeConfig.yml) with the generated content.
-### Choose PODs
-The [ClusterLogs.kt](src/main/kotlin/com/almworks/dyoma/kubenetes/logs/apps/ClusterLogs.kt) starts the server which 
-loads logs from the cluster and makes the available for the web app.
- * You may configure server port in the [server.properties](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/server.properties)
- * Choose PODs you want to load logs from:
-    ```kotlin
-    client.listPods("default")
-    //.filter { it.name == "front-0" } // Uncomment to choose PODs you want to load logs from
-      .forEach(extractor::loadLogs)
-    ```
-Run `ClusterLogs.kt` and find the loaded logs at: http://localhost:8123/api/events?sid=0
+2. Run it in terminal. In the same terminal run `kubectl config view --raw > kubeConfig.yml`
+3. Edit the generated file and add absolute paths to settings: `certificate-authority`, `client-certificate`, `client-key`.
+   The absolute paths are path to your `env.sh`
+4. Move your `kubeConfig.yml` file to [kubeConfig.yml](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/kubeConfig.yml)
 
-You share your server via [ngrok](https://ngrok.com/): `ngrok http 8123` and send the link to your colleagues.
 ### Prepare the Web App
 * If you changed server port from default (8123) you need to update [index.tsx](logs-viewer/src/ui/index.tsx)
 * In terminal `cd` to [logs-viewer](logs-viewer)
 * Run `npm install`
 * Run `npm run build`. Other options are: `build-dev` and `build-watch`
+
+### Run the App
+ * [ClusterLogs.kt](src/main/kotlin/com/almworks/dyoma/kubenetes/logs/apps/ClusterLogs.kt) loads logs from the cluster (defined by `kubeConfig.yml`)
+ * [ReadLogs.kt](src/main/kotlin/com/almworks/dyoma/kubenetes/logs/apps/ReadLogs.kt) loads logs from files 
+   You can download the log files from K8s Dashboard
+ * While your server is running your may share it via [ngrok](https://ngrok.com/): `ngrok http 8123` and send the link to your colleagues 
 
 The server serves static content (the WebApp). 
 Its location is configured in the `staticContent.path` property in [server.properties](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/server.properties). 
