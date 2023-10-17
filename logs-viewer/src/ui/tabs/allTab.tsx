@@ -1,7 +1,7 @@
 import * as React from "react";
 import {GroupByOperation, ObservableSet} from "../commons/operations";
 import {LEvent} from "../../data/loadEvents";
-import {Comparator} from "../../utils/collections";
+import {Comparator, List} from "../../utils/collections";
 import {DisplayableEvents, EventListComponent} from "../commons/events";
 import "./allTab.css"
 import {ValueAndSetter} from "../commons/components";
@@ -16,6 +16,9 @@ function Groups(props: GroupsProps) {
   const groups = props.events
       .useSnapshot()
       .toKeyValueArray(list => list.length > 0)
+  props.selection[0].forEach(s => {
+    if (!groups.find(g => s === g[0])) groups.push([s, List.empty()])
+  })
   if (props.groupOrder) groups.sort(Comparator.byKey(p => p[0], props.groupOrder))
 
   function toggle(e: React.MouseEvent, value: string) {

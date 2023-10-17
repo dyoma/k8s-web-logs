@@ -47,7 +47,9 @@ export class LEvent {
       readonly data: EventData
   ) {}
 
-  static RECENT_FIRST_COMPARATOR: Comparator<LEvent> = Comparator.by(e => -e.time.getTime())
+  static RECENT_FIRST_COMPARATOR: Comparator<LEvent> = Comparator
+      .by((e: LEvent) => -e.time.getTime())
+      .thenBy(e => -e.sid)
 }
 
 export class EventsUpdate {

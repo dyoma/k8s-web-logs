@@ -31,10 +31,6 @@ Its location is configured in the `staticContent.path` property in [server.prope
 * **Server.** Stops loading logs on POD shutdown (including restart and temporary PODs such as Jobs).
   * Server restart (and webapp reload) is required to continue monitoring of the restarted POD. 
   * Previous log records (before restart) are lost. 
-* Filters on the "All" tab don't show filtered out POD names and log levels if there is no visible records with these value,
-but the filters themselves remain active.   
-  * To reproduce the bug select some PODs/Levels then press the "Now" button to show only new log record.
-    The configured filters remain active.
 
 ## Features
 * Load exported logs from files. See [ReadLogs.kt](src/main/kotlin/com/almworks/dyoma/kubenetes/logs/apps/ReadLogs.kt)
