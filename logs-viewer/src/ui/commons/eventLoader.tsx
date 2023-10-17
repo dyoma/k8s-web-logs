@@ -4,8 +4,8 @@ import {SubscriptionListener} from "../../utils/listeners";
 import {LEvent, loadEvents, Pod} from "../../data/loadEvents";
 import {ObservableSet, SetHolder} from "./operations";
 
-export function EventLoader(props: {apiUri: string, children: ReactNode | ReactNode[]}) {
-  const loader = React.useMemo(() => new EventLoaderProcess(props.apiUri), [props.apiUri]);
+export function EventLoader(props: {apiUri: string, pingMillis?: number, children: ReactNode | ReactNode[]}) {
+  const loader = React.useMemo(() => new EventLoaderProcess(props.apiUri, props.pingMillis), [props.apiUri]);
   return <Context.Provider value={loader}>
     {props.children}
   </Context.Provider>
