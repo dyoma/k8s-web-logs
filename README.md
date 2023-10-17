@@ -14,14 +14,17 @@ loads logs from the cluster and makes the available for the web app.
     //.filter { it.name == "front-0" } // Uncomment to choose PODs you want to load logs from
       .forEach(extractor::loadLogs)
     ```
-Run `RunServer.kt` and find the loaded logs at: http://localhost:8123/api/events?sid=0    
+Run `ClusterLogs.kt` and find the loaded logs at: http://localhost:8123/api/events?sid=0
+
+You share your server via [ngrok](https://ngrok.com/): `ngrok http 8123` and send the link to your colleagues.
 ### Prepare the Web App
 * If you changed server port from default (8123) you need to update [index.tsx](logs-viewer/src/ui/index.tsx)
 * In terminal `cd` to [logs-viewer](logs-viewer)
 * Run `npm install`
 * Run `npm run build`. Other options are: `build-dev` and `build-watch`
-* Open in Idea [index.html](logs-viewer/dist/index.html) and open it in your favorite browser (I tested with Firefox)
-* Remove the query of the `index.html` URL, otherwise the page automatically reloads on any change. 
+
+The server serves static content (the WebApp). 
+Its location is configured in the `staticContent.path` property in [server.properties](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/server.properties). 
 
 ## Know Problems
 * **Server.** All logs loaded from the cluster remains in JVM heap forever. So, the server consumes more memory than needed.
