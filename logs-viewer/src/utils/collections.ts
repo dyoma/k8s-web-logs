@@ -118,12 +118,6 @@ export type ComparatorBuilder<T> = Comparator<T> & {
 }
 export namespace Comparator {
   export function by<T, K>(getKey: (v: T) => K): ComparatorBuilder<T> {
-    const comp = (a: T, b: T) => {
-      const ka = getKey(a)
-      const kb = getKey(b)
-      if (ka == kb) return 0
-      return ka < kb ? -1 : 1
-    }
     return addMethods((a: T, b: T) => {
       const ka = getKey(a)
       const kb = getKey(b)
