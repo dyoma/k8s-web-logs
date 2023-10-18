@@ -9,7 +9,7 @@ import {ValueAndSetter} from "./commons/components";
 import {LEvent} from "../data/loadEvents";
 import {DisplayableEvents} from "./commons/events";
 
-const SERVER = "http://localhost:8123/api"
+const SERVER = "/api"
 
 function DisplayAfter(props: {start: ValueAndSetter<Date | null>}) {
   const [text, setText] = React.useState<string>(props.start[0]?.toISOString() || "")

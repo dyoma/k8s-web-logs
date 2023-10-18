@@ -14,7 +14,11 @@ import java.time.Instant
 data class PodInfo(
   val name: String,
   val startedAt: Instant
-)
+) {
+  private var _runId: String? = null
+
+  val runId: String get() = _runId ?: "$name=${startedAt.toEpochMilli()}".also { _runId = it }
+}
 
 /**
  * Represents raw log record as it arrives from k8s API but with source POD ([ReceivedPodEvent.pod])
