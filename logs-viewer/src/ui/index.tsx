@@ -72,5 +72,5 @@ function LogsApp() {
 export function initReactApp() {
   const container = document.getElementById('reactRoot');
   const root = createRoot(container!!);
-  root.render(<EventLoader apiUri={SERVER}><LogsApp/></EventLoader>);
+  root.render(<EventLoader apiUri={SERVER} pingMillis={500}><LogsApp/></EventLoader>);
 }
