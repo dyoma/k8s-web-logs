@@ -1,8 +1,7 @@
 package com.almworks.dyoma.kubenetes.logs.core
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.*
+import com.almworks.dyoma.kubenetes.logs.server.createObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.InputStream
 import java.time.Instant
 
@@ -108,7 +107,3 @@ class EventTotalOrder {
     }
   }
 }
-
-fun createObjectMapper(): ObjectMapper = ObjectMapper()
-  .registerModule(JavaTimeModule())
-  .registerModule(kotlinModule { enable(KotlinFeature.SingletonSupport) })

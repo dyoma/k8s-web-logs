@@ -1,30 +1,57 @@
-package com.almworks.dyoma.kubenetes.logs.server
+package com.almworks.dyoma.kubenetes.logs.server.db
 
 import com.almworks.dyoma.kubenetes.logs.core.PodEvent
-import java.time.Instant
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
-class EventDb {
+/**
+ * Lifecycle:
+ * 1. Initially its active: receives events.
+ * 2. Deactivated: may receive events in case of race condition, but nothing wrong happens.
+ * 3. Terminated: cannot receive events.
+ *
+ * Usage:
+ * * Collect all events until it's get full.
+ * * Keep it for a while in case new events arrive.
+ * * Terminate and write to disk.
+ */
+internal class MemoryGeneration: Generation {
   private val bySid = BySid()
   private val byTime = ByTime()
+  @Volatile
+  private var active = true
+  private var terminated = false
 
-  fun receiveEvent(event: PodEvent<*>) {
+  /**
+   * @return number of events collected or -1 if the instance is inactive and the event hasn't been accepted
+   */
+  fun receiveEvent(event: PodEvent<*>): Int {
+    if (!active) return -1
+    if (terminated) throw IllegalStateException("Generation is terminated")
     if (event is PodEvent.Parsed) {
       bySid.add(event)
-      byTime.add(event)
+      return byTime.add(event)
     }
+    return size
   }
 
-  fun searchEvent(fromSid: Long?, fromTime: Instant?, collector: (PodEvent.Parsed) -> Unit) {
-    val fromMillis = fromTime?.toEpochMilli()
-    if (fromSid != null || fromMillis == null) {
-      bySid.retrieve(fromSid ?: 0) {
-        if (fromMillis == null || fromMillis <= it.time) collector(it)
-      }
+  val size get() = byTime.size
+
+  fun deactivate() {
+    active = false
+  }
+
+  fun terminate() {
+    terminated = true
+  }
+
+  override fun searchEvent(query: EventSearch, collector: (PodEvent.Parsed) -> Unit) {
+    val fromMillis = query.fromTime?.toEpochMilli()
+    if (query.fromSid != null || fromMillis == null) {
+      bySid.retrieve(query.fromSid ?: 0, query.sendMatchingTo(collector))
     } else {
-      byTime.retrieve(fromMillis, collector)
+      byTime.retrieve(fromMillis, query.sendMatchingTo(collector))
     }
   }
 
@@ -33,12 +60,18 @@ class EventDb {
     private val data = mutableListOf<PodEvent.Parsed>()
     private val newLock = Object()
     private val newEvents = mutableListOf<PodEvent.Parsed>()
+    @Volatile
+    private var _size = 0
 
-    fun add(event: PodEvent.Parsed) {
+    fun add(event: PodEvent.Parsed): Int {
       synchronized(newLock) {
         newEvents.add(event)
+        _size++
+        return _size
       }
     }
+
+    val size: Int get() = _size
 
     fun retrieve(fromSid: Long, collector: (PodEvent.Parsed) -> Unit) {
       processNew()

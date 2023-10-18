@@ -1,5 +1,7 @@
 package com.almworks.dyoma.kubenetes.logs.server
 
+import com.almworks.dyoma.kubenetes.logs.server.db.DbManager
+import com.almworks.dyoma.kubenetes.logs.server.db.EventSearch
 import com.sun.net.httpserver.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -8,16 +10,15 @@ import java.time.Instant
 import java.util.*
 
 
-class Server(val db: EventDb, val port: Int, val server: HttpServer) {
+class Server(val db: DbManager, val port: Int, val server: HttpServer) {
   val url get() = "http://localhost:$port/"
 
   companion object {
     private val log = LoggerFactory.getLogger(Server::class.java)
 
-    fun start(port: Int): Server {
-      val db = EventDb()
+    fun start(port: Int, db: DbManager): Server {
       val server = HttpServer.create(InetSocketAddress(port), 0)
-      server.createContext("/api/events", EventsHandler(SendEvents(db)))
+      server.createContext("/api/events", EventsHandler(db))
       server.executor = null // creates a default executor
       server.start()
       return Server(db, port, server).also {
@@ -32,7 +33,7 @@ class Server(val db: EventDb, val port: Int, val server: HttpServer) {
           Server::class.java.getResourceAsStream("server.properties")!!.use { properties.load(it.reader()) }
         }
       val port = Integer.parseInt(properties.getProperty("server.port"))
-      val server = start(port)
+      val server = start(port, DbManager(File(properties.getProperty("db.path"))))
       properties.getProperty("staticContent.path")?.let { path ->
         val staticDir = File(path)
         staticDir.listFiles()?.forEach { file ->
@@ -67,7 +68,7 @@ class Server(val db: EventDb, val port: Int, val server: HttpServer) {
     }
   }
 
-  private class EventsHandler(private val sendEvents: SendEvents) : HttpHandler {
+  private class EventsHandler(private val db: DbManager) : HttpHandler {
     private data class GetEventsParams(val sid: Long?, val time: Instant?) {
       companion object {
         fun fromUri(uri: URI): GetEventsParams {
@@ -91,7 +92,8 @@ class Server(val db: EventDb, val port: Int, val server: HttpServer) {
       exchange.responseHeaders.add("Content-Type", "application/json; charset=utf-8")
       exchange.responseHeaders.add("Access-Control-Allow-Origin", "*")
       exchange.sendResponseHeaders(200, 0)
-      sendEvents.send(params.sid, params.time, exchange.responseBody)
+      exchange.responseBody.use { stream ->
+        EventSender.toStream(stream) { db.searchEvent(EventSearch(params.sid, params.time), it::send) } }
     }
   }
 }
