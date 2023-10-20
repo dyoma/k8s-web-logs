@@ -22,7 +22,11 @@ type RawEvent = Raw.Pod | Raw.Event
 export class Pod {
   constructor(readonly name: string, readonly startedAt: Date) {}
 
-  get podId() {return `${this.name}-${this.startedAt.getTime()}`}
+  private _podId: string | null = null
+  get podId() {
+    if (this._podId === null) this._podId = `${this.name}-${this.startedAt.getTime()}`
+    return this._podId
+  }
 }
 
 export type EventData = {

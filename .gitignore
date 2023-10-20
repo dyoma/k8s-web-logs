@@ -8,3 +8,4 @@ Thumbs.db
 cache/
 web-inspector.iml
 src/main/resources/com/almworks/dyoma/kubenetes/logs/server/kubeConfig.yml
+src/main/resources/kubeConfig.yml
