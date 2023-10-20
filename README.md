@@ -4,7 +4,7 @@
 2. Run it in terminal. In the same terminal run `kubectl config view --raw > kubeConfig.yml`
 3. Edit the generated file and add absolute paths to settings: `certificate-authority`, `client-certificate`, `client-key`.
    The absolute paths are path to your `env.sh`
-4. Move your `kubeConfig.yml` file to [kubeConfig.yml](src/main/resources/com/almworks/dyoma/kubenetes/logs/server/kubeConfig.yml)
+4. Move your `kubeConfig.yml` file to [kubeConfig.yml](src/main/resources/kubeConfig.yml)
 
 ### Prepare the Web App
 * If you changed server port from default (8123) you need to update [index.tsx](logs-viewer/src/ui/index.tsx)
@@ -23,9 +23,6 @@ Its location is configured in the `staticContent.path` property in [server.prope
 
 ## Know Problems
 * **Server.** All logs loaded from the cluster remains in JVM heap forever. So, the server consumes more memory than needed.
-* **Server.** Stops loading logs on POD shutdown (including restart and temporary PODs such as Jobs).
-  * Server restart (and webapp reload) is required to continue monitoring of the restarted POD. 
-  * Previous log records (before restart) are lost. 
 
 ## Features
 * Load exported logs from files. See [ReadLogs.kt](src/main/kotlin/com/almworks/dyoma/kubenetes/logs/apps/ReadLogs.kt)
