@@ -11,29 +11,14 @@ class DiskGeneration private constructor(private val files: List<FileInfo>): Gen
   companion object {
     fun loadFiles(root: File): DiskGeneration {
       val files = mutableListOf<FileInfo>()
-      root.listFiles()?.forEach { toFileInfo(it)?.also(files::add) }
+      root.listFiles()?.forEach { FileInfo.fromFile(it)?.also(files::add) }
       return DiskGeneration(files)
-    }
-
-    private fun toFileInfo(file: File): FileInfo? {
-      val name = file.name
-      val m = FN_PATTERN.matcher(name)
-      if (!m.matches()) return null
-      val timeStr = m.group(1)
-      val sidStr = m.group(2)
-      val time: Instant
-      val sid: Long
-      try {
-        time = Instant.parse(timeStr)
-        sid = sidStr.toLong()
-      } catch (e: Exception) {
-        return null
-      }
-      return FileInfo(sid, time, file)
     }
   }
 
-  fun withFile(file: File) = toFileInfo(file)?.let { DiskGeneration(files + it) } ?: this
+  val fileCount: Int get() = files.size
+
+  fun withFile(file: File) = FileInfo.fromFile(file)?.let { DiskGeneration(files + it) } ?: this
 
   override fun searchEvent(query: EventSearch, collector: (PodEvent.Parsed) -> Unit) {
     files.asSequence()
@@ -47,6 +32,27 @@ class DiskGeneration private constructor(private val files: List<FileInfo>): Gen
   }
 }
 
-private val FN_PATTERN = Pattern.compile("""^([^\[]+)\[(\d+)]\.est$""")
+internal data class FileInfo(val lastSid: Long, val listTime: Instant, val file: File) {
+  companion object {
+    private val FN_PATTERN = Pattern.compile("""^([^\[]+)\[(\d+)]\.est$""")
 
-private data class FileInfo(val lastSid: Long, val listTime: Instant, val file: File)
+    fun fromFile(file: File): FileInfo? {
+      val name = file.name
+      val m = FN_PATTERN.matcher(name)
+      if (!m.matches()) return null
+      val timeStr = m.group(1).replace('_', ':')
+      val sidStr = m.group(2)
+      val time: Instant
+      val sid: Long
+      try {
+        time = Instant.parse(timeStr)
+        sid = sidStr.toLong()
+      } catch (e: Exception) {
+        return null
+      }
+      return FileInfo(sid, time, file)
+    }
+
+    fun filename(time: Instant, sid: Long) = "${time.toString().replace(':', '_')}[$sid].est"
+  }
+}

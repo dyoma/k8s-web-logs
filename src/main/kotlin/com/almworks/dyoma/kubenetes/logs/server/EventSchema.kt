@@ -35,12 +35,11 @@ object EventSchema {
 
   data class Event(val event: PodEvent.Parsed): Restored() {
     companion object {
-      private val MAP_JSON_TYPE = JsonFieldType.obj<Map<String, Any>> { data -> data }
       internal const val T_EVENT = "event"
       internal val SID = JsonField("sid", JsonFieldType.LONG)
       internal val POD_ID = JsonField("pod", JsonFieldType.INT)
       internal val TIME = JsonField("time", JsonFieldType.LONG)
-      internal val DATA = JsonField("data", MAP_JSON_TYPE)
+      internal val DATA = JsonField("data", JsonFieldType.MAP)
 
       fun write(gen: JsonGenerator, podId: Int, event: PodEvent.Parsed) {
         gen.composeObject {

@@ -1,6 +1,7 @@
 package com.almworks.dyoma.kubenetes.logs.server.db
 
 import com.almworks.dyoma.kubenetes.logs.core.PodEvent
+import java.time.Instant
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -20,14 +21,15 @@ internal class MemoryGeneration: Generation {
   private val bySid = BySid()
   private val byTime = ByTime()
   @Volatile
-  private var active = true
+  private var _retired: Instant? = null
+  @Volatile
   private var terminated = false
 
   /**
    * @return number of events collected or -1 if the instance is inactive and the event hasn't been accepted
    */
   fun receiveEvent(event: PodEvent<*>): Int {
-    if (!active) return -1
+    if (_retired != null) return -1
     if (terminated) throw IllegalStateException("Generation is terminated")
     if (event is PodEvent.Parsed) {
       bySid.add(event)
@@ -38,9 +40,12 @@ internal class MemoryGeneration: Generation {
 
   val size get() = byTime.size
 
-  fun deactivate() {
-    active = false
+  fun retire() {
+    if (_retired != null) throw IllegalStateException("Generation is already retired")
+    _retired = Instant.now()
   }
+
+  val retired: Instant? get() = _retired
 
   fun terminate() {
     terminated = true

@@ -9,7 +9,14 @@ import java.net.URL
  * POD's name prefixes to ignore.
  * These short-living PODs does not produce any logs, so we ignore them
  */
-private val ignorePods = listOf("gantt-migration-cron-watcher-job-", "jira-webhooks-ingress-webhooks-job-", "cassandra-manager-trusted-app-integration-")
+private val ignorePods = listOf(
+  "gantt-migration-cron-watcher-job-",
+  "jira-webhooks-ingress-webhooks-job-",
+  "cassandra-manager-trusted-app-integration-",
+  "module-remover-",
+  "cassandra-manager-"
+)
+
 
 fun main(): Unit = runBlocking {
   val server = Server.startDefault()

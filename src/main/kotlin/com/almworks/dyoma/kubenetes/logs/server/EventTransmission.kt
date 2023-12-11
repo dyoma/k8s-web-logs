@@ -53,7 +53,8 @@ fun receiveEvents(stream: InputStream) = receiveEvents(mapper.createParser(strea
 
 fun receiveEvents(parser: JsonParser) = sequence {
   val idToPod = mutableMapOf<Int, PodInfo>()
-  if (parser.currentToken() != JsonToken.START_ARRAY) throw IllegalStateException("Expected array")
+  if (parser.nextToken() != JsonToken.START_ARRAY)
+    throw IllegalStateException("Expected array")
   while (parser.nextToken() != JsonToken.END_ARRAY) {
     when (val next = EventSchema.readNext(parser, idToPod)) {
       is EventSchema.Pod -> idToPod[next.id] = next.pod

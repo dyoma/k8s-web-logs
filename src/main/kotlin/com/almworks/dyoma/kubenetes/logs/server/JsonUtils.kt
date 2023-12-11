@@ -26,12 +26,13 @@ fun JsonParser.expectToken(token: JsonToken) {
 fun JsonParser.readObjectFields(valueReader: (name: String, parser: JsonParser) -> Unit) {
   expectToken(JsonToken.START_OBJECT)
   while (nextToken() != JsonToken.END_OBJECT) {
-    val name = nextFieldName()
+    val name = currentName()
+    nextToken() // Move to value before reading
     valueReader(name, this)
   }
 }
 
-data class JsonField<T : Any>(val name: String, val type: JsonFieldType<T>) {
+data class JsonField<T : Any>(val name: String, val type: IJsonFieldType<T>) {
   fun fromMap(map: Map<String, Any>) = type.cast(map[name])
     ?: throw IllegalArgumentException("Missing field '$name' in pod info")
 
@@ -42,16 +43,23 @@ data class JsonField<T : Any>(val name: String, val type: JsonFieldType<T>) {
   }
 }
 
-abstract class JsonFieldType<T: Any>(private val klass: KClass<T>) {
-  abstract fun read(parser: JsonParser): T
+interface IJsonFieldType<T: Any> {
+  fun read(parser: JsonParser): T
+  fun write(gen: JsonGenerator, name: String, value: T)
+  fun cast(value: Any?): T?
+}
 
-  fun cast(value: Any?): T? {
+abstract class JsonFieldType<T: Any>(private val klass: KClass<T>): IJsonFieldType<T> {
+
+  abstract override fun read(parser: JsonParser): T
+
+  override fun cast(value: Any?): T? {
     if (value == null) return null
     if (klass.isInstance(value)) return klass.cast(value)
     else throw IllegalArgumentException("Expected ${klass.java.name} but got ${value.javaClass.name}")
   }
 
-  abstract fun write(gen: JsonGenerator, name: String, value: T)
+  abstract override fun write(gen: JsonGenerator, name: String, value: T)
 
   companion object {
     val STRING = object : JsonFieldType<String>(String::class) {
@@ -70,26 +78,42 @@ abstract class JsonFieldType<T: Any>(private val klass: KClass<T>) {
       override fun read(parser: JsonParser): Instant = Instant.ofEpochMilli(parser.longValue)
       override fun write(gen: JsonGenerator, name: String, value: Instant) = gen.writeNumberField(name, value.toEpochMilli())
     }
+    val MAP = object : IJsonFieldType<Map<String, Any>> {
+      override fun read(parser: JsonParser): Map<String, Any> {
+        val data = mutableMapOf<String, Any>()
+        parser.readObjectFields { fieldName, p ->
+          when (p.currentToken) {
+            JsonToken.VALUE_STRING -> data[fieldName] = p.text
+            JsonToken.VALUE_NUMBER_INT -> data[fieldName] = p.longValue
+            JsonToken.VALUE_NUMBER_FLOAT -> data[fieldName] = p.doubleValue
+            JsonToken.VALUE_TRUE -> data[fieldName] = true
+            JsonToken.VALUE_FALSE -> data[fieldName] = false
+            JsonToken.START_OBJECT -> data[fieldName] = read(p)
+            else -> throw IllegalArgumentException("Unexpected token ${p.currentToken}")
+          }
+          data[fieldName] = parser.text
+        }
+        return data
+      }
+
+      override fun write(gen: JsonGenerator, name: String, value: Map<String, Any>) {
+        gen.writeObjectField(name, value)
+      }
+
+      override fun cast(value: Any?): Map<String, String>? {
+        if (value == null) return null
+        @Suppress("UNCHECKED_CAST")
+        return Map::class.cast(value) as Map<String, String>? ?: throw IllegalArgumentException("Expected Map<String, String> but got ${value.javaClass.name}")
+      }
+    }
 
     fun readValues(parser: JsonParser, schema: Map<String, JsonField<*>>): MutableMap<String, Any> {
       val data = mutableMapOf<String, Any>()
       parser.readObjectFields { fieldName, p ->
-        val field = schema[fieldName] ?: throw IllegalArgumentException("Unknown field '$fieldName' in pod info")
+        val field = schema[fieldName] ?: throw IllegalArgumentException("Unknown field '$fieldName' in ${schema.keys}")
         data[fieldName] = field.type.read(p)
       }
       return data
-    }
-
-    inline fun <reified T: Any> obj(vararg fields: JsonField<*>, crossinline factory: (map: Map<String, Any>) -> T) = object : JsonFieldType<T>(T::class) {
-      private val schema = JsonField.toObjSchema(*fields)
-      override fun read(parser: JsonParser): T {
-        val data = readValues(parser, schema)
-        return factory(data)
-      }
-
-      override fun write(gen: JsonGenerator, name: String, value: T) {
-        gen.writeObjectField(name, value)
-      }
     }
   }
 }
