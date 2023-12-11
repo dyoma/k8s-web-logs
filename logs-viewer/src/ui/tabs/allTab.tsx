@@ -97,9 +97,13 @@ function getLogLevel(event: LEvent) { return event.data.level }
 function getPodName(event: LEvent) { return event.pod.name }
 
 export function AllEvents() {
-  const displayableFilter = React.useContext(DisplayableEvents);
+  const displayableFilter = React.useContext(DisplayableEvents)
+  return <EventViewer filter={displayableFilter}/>
+}
+
+export function EventViewer(props: {filter: (e: LEvent) => boolean}) {
   const events = EventLoader.useAllEvents()
-      .useFilter(displayableFilter)
+      .useFilter(props.filter)
 
   const byPodName = ByValueSetFilter.use(events, getPodName)
   const byLogLevel = ByValueSetFilter.use(events, getLogLevel);
