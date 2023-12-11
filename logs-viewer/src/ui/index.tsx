@@ -8,6 +8,7 @@ import {AllEvents} from "./tabs/allTab";
 import {ValueAndSetter} from "./commons/components";
 import {LEvent} from "../data/loadEvents";
 import {DisplayableEvents} from "./commons/events";
+import {NoDomainIdEvents} from "./tabs/NoDomainIdTab";
 
 const SERVER = "/api"
 
@@ -65,7 +66,14 @@ function LogsApp() {
         comp: <AllEvents/>,
         permanent: true,
         keepDOM: "STD:All"
-      }]}/>
+      },
+      {
+        name: "NoDomain",
+        comp: <NoDomainIdEvents/>,
+        permanent: true,
+        keepDOM: "STD:NoDomain"
+      }
+    ]}/>
   </DisplayableEvents.Provider>
 }
 

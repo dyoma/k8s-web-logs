@@ -55,6 +55,10 @@ export function EventDetails(props: {event: LEvent}) {
         <FieldValue label="Logger" value={props.event.data.logger_name}/>
       </div>
       <div>
+        <>
+          <FieldValue key="sid" label="sid" value={props.event.sid} displayInline={true} valueClass="ui-event-value-unknown"/>
+          <span className="mr2"/>
+        </>
         { Object.getOwnPropertyNames(props.event.data).map(key => {
           if (SKIP_EVENT_PROPERTIES.has(key)) return null
           return <>
